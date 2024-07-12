@@ -60,47 +60,48 @@ Researchers are looking into the literature and have found Protocols 5 and 6 in
 from random import randrange
 
 class Share:
-		# Secret value
-		_value: int
-		
-    def __init__(self, value):
-        self._value = value
-    def __repr__(self):
-        return f"Share({self._value})"
+	# Secret value
+	_value: int
+
+	def __init__(self, value):
+		self._value = value
+	def __repr__(self):
+		return f"Share({self._value})"
         
 class FiniteGroup:
 # Modulus, i.e. p in Z/pZ group: int
-    def __init__(self, group):
-        self.group = group
-    def add(self, left, right):
-        value = (left._value + right._value) % self.group
-        return Share(value)
-		def sub(self, left, right):
-		    value = (left._value - right._value) % self.group
-		    return Share(value)
-		def product(self, left, right):
-		    value = (left._value * right._value) % self.group
-		    return Share(value)
-		def product_with_public(self, share, public):
-		    value = (share._value * public) % self.group
-		    return Share(value)
-		def exp(self, base, exponent):
-		    if type(base) == int and type(exponent) == Share:
-		        power = pow(base, exponent._value, self.group)
-		    elif type(exponent) == int and type(base) == Share:
-		        power = pow(base._value, exponent, self.group)
-		    return Share(power)
-		def public_exp(self, base, exponent):
-		    power = pow(base, exponent, self.group)
-		    return power
-		def open(self, share):
-		    return share._value % self.group
-		def share(self, value):
-		    return Share(value % self.group)
-		def srand(self):
-		# random value in multiplicative group return Share(randrange(1, self.group))
-		def __repr__(self):
-		    return f"Z/{self.group}Z"
+	def __init__(self, group):
+		self.group = group
+	def add(self, left, right):
+		value = (left._value + right._value) % self.group
+		return Share(value)
+	def sub(self, left, right):
+		value = (left._value - right._value) % self.group
+		return Share(value)
+	def product(self, left, right):
+		value = (left._value * right._value) % self.group
+		return Share(value)
+	def product_with_public(self, share, public):
+		value = (share._value * public) % self.group
+		return Share(value)
+	def exp(self, base, exponent):
+		if type(base) == int and type(exponent) == Share:
+		power = pow(base, exponent._value, self.group)
+		elif type(exponent) == int and type(base) == Share:
+		power = pow(base._value, exponent, self.group)
+		return Share(power)
+	def public_exp(self, base, exponent):
+		power = pow(base, exponent, self.group)
+		return power
+	def open(self, share):
+		return share._value % self.group
+	def share(self, value):
+		return Share(value % self.group)
+	def srand(self):
+		# random value in multiplicative group
+		return Share(randrange(1, self.group))
+	def __repr__(self):
+		return f"Z/{self.group}Z"
 ```
 
 

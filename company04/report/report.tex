@@ -1,0 +1,152 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage{fullpage}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{stmaryrd}
+\usepackage{mathtools}
+\usepackage{epsfig}
+\usepackage{hyperref}
+\usepackage{epstopdf}
+\usepackage{color}
+\usepackage{colortbl}
+\usepackage{multirow}% http://ctan.org/pkg/multirow
+\usepackage{hhline}%
+\usepackage{lscape}
+\usepackage{graphicx}
+\usepackage[inline]{enumitem}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{tikz-cd}
+\usepackage{cleveref}
+\usepackage{url}
+\usepackage{listings}
+\usepackage[
+	lambda,advantage,adversary,probability,
+	sets,notions,asymptotics,keys,
+	operators,ff,primitives
+]{cryptocode}
+\usepackage{tcolorbox}
+\usepackage{todonotes}
+
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstset{
+	backgroundcolor=\color{backcolour},   
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{magenta},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,         
+  breaklines=true,                 
+  captionpos=b,                    
+  keepspaces=true,                 
+  numbers=left,                    
+  numbersep=5pt,                  
+  showspaces=false,                
+  showstringspaces=false,
+  showtabs=false,                  
+  tabsize=2
+}
+
+\newcolumntype{C}[1]{>{\centering\arraybackslash}m{#1}}
+
+
+\input{./tex/cBnotation.tex}
+
+
+\begin{document}
+
+	\begin{center}
+		\textbf{\large Technical Assessment -- Carlo Brunetta}
+		\vspace{2mm}
+	\end{center}
+
+	We expect you to send us within 7 days: a report answering the questions,
+	the list of tools you have used, code you may have developed.
+	Please send us your results in a zip file, along with your report in readable format (e.g. pdf)
+	Don't hesitate to also include things that did not work, as experimentation is an important
+	part of science!
+	%
+	A Proof of Sequential Work (\PoSW) enables showing that some computation was going on for $T$ time
+	steps since some statement was received.
+	A lattice-based construction of \PoSW\ is given in \cite{EPRINT:LaiMal24}.
+
+	\begin{enumerate}
+		\item Present in a high-level way the construction given in \cite{EPRINT:LaiMal24}.
+			Explain the intuition behind it.
+		\item Fully specify the resulting protocol and prototype it with your favourite programming
+			language/tool (e.g., Python, Sage, C++, Rust, ...).
+		\item Analyse the efficiency of the implementation in terms of memory, communication and
+			computation requirements.
+		\item How to turn the above protocol into a non-interactive proof system? Write down the resulting
+			system by fully specifying the different steps.
+		\item Present one or two applications of the previous protocol and/or system.
+	\end{enumerate}
+
+	\vspace*{-10pt}
+	\vfill
+	
+	\paragraph{Report Organisation.}
+	\begin{itemize}
+		\item \texttt{tex/} Folder containing all the \TeX\ files to generate the report.
+		\item \texttt{code/} Folder containing the implemented code.
+		\begin{itemize}
+			\item \texttt{code/main.py} Main script to run the \PoSW\ prototype.
+			\item \texttt{code/posw.py} \PoSW\ implementation.
+			\item \texttt{code/ring.py} Ring and related functionalities implementation.
+			\item \texttt{code/debug.py} Unpolished testing/debugging script.
+		\end{itemize}
+		\item \texttt{report.pdf} This file: the report as a PDF with table of contents:
+			\renewcommand\contentsname{\vspace*{-35pt}}
+			\setcounter{tocdepth}{1}
+			\tableofcontents
+	\end{itemize}
+
+	\mindnote{
+		I will add in grey-coloured boxes (like this one) personal notes, failed attempts or similar.\\
+		Anything that I would share with others when brainstorming/solving problems!
+	}
+
+	\vfill
+	
+	\paragraph{List of Tools.}
+	The report is written in \LaTeX\ using an (evolving) personal template for quick notes and
+	\msf{Grammarly} always checking for typos.
+	The bibliography is a mix of \msf{cryptobib} and \msf{eprint}'s \BibTeX\ entries.
+	%
+	The code was first designed on pen-and-paper and later developed in \msf{Python}.
+	Some tedious coding parts (e.g. command-line interface and comments/structuring) are
+	modified versions of generated code from \msf{ChatGPT}, i.e. first generate the skeleton-code
+	and later fill up with my comments/algorithms.
+
+	The construction correctness, analysis and other examples are all developed on pen-and-paper.
+
+	\vspace{1mm}
+	\mindnote{I might have misunderstood the meaning of the request. Sorry if this is the case! }
+	
+	\vfill
+
+
+	\clearpage
+	\input{tex/explanation}
+	\input{tex/prototype}
+	\clearpage
+	\input{tex/analysis}
+	% \clearpage
+	\input{tex/noninteractive}
+	\input{tex/applications}
+
+	% \clearpage
+	\bibliographystyle{alphaurl}
+	\bibliography{abbrev3,biblio}
+
+
+\end{document} 

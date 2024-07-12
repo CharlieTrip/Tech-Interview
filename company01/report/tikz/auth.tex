@@ -1,0 +1,47 @@
+% To allow compilation of the file
+% !TeX root = ./../reply.tex
+
+\begin{tikzpicture}
+  \draw (0,0) node [scale=1.0]{
+    \begin{tikzpicture}
+      [
+        txt/.style={sloped,font=\scriptsize,pos=.5},
+        txtv/.style={font=\scriptsize},
+        construction/.style={color=green,thick},
+        notion/.style={color=blue,thick},
+        impossible/.style={color=red, thick},
+        trivial/.style={color=black,thick,double},
+        conjecture/.style={color=orange,thick,decorate,decoration={snake,amplitude=1}},
+        related/.style={dashed,thick}
+      ]
+
+      \def\x{4};
+      \def\y{0.5};
+
+      \draw  (\x,\y) node[conductor,female,monitor,mirrored,minimum size=0.5cm] {\footnotesize Server};
+      \draw  (-\x,\y) node[duck,minimum size=0.5cm] {\footnotesize User};
+      
+      \fill [orange!10,draw=black!20,rounded corners] (-\x-2,-4.5*\y) rectangle (\x+2,-0.25);
+      \draw (\x+2.25,-2.5*\y) node[rotate=-90] {\scriptsize\textbf{Registration}};
+      \draw (-\x,-\y) node[txtv] {\textbf{Password:} $\red{x} \in \ZZ_p^*$};
+      \draw (\x,-2*\y) node[txtv] (g) {\textbf{Group:} $(\GG,\circ),g,h$};
+      \draw[-Stealth] (g) -- ++ (-2*\x,0);
+      \draw (-\x,-3*\y) node[txtv] (regU) {$(\circ^{\red{x}} g, \circ^{\red{x}} h)$};
+      \draw (\x,-3*\y) node[txtv] (regS) {$(y_1,y_2)$};
+      \draw (\x,-4*\y) node[txtv] {Store $(y_1,y_2)$ for User};
+      \draw[-Stealth] (regU) -- (regS);
+      
+      \fill [green!10,draw=black!20,rounded corners] (-\x-2,-9.5*\y) rectangle (\x+2,-4.65*\y);
+      \draw (\x+2.25,-7*\y) node[rotate=-90] {\scriptsize\textbf{Authentication}};
+      \draw (-\x,-5*\y) node[txtv] {$(r_1,r_2) \gets \pcommit()$, $\red{r}$};
+      \draw (-\x,-6*\y) node[txtv] (com) {$(r_1,r_2)$};
+      \draw[-Stealth] (com) -- ++ (2*\x,0);
+      \draw (\x,-7*\y) node[txtv] (cha) {$c \gets \pchal()$};
+      \draw[-Stealth] (cha) -- ++ (-2*\x,0);
+      \draw (-\x,-8*\y) node[txtv] (ope) {$s \gets \popen(\red{r},\red{x},c)$};
+      \draw[-Stealth] (ope) -- ++ (2*\x,0);
+      \draw (\x,-9*\y) node[txtv] {$\pverify(y_1,y_2,r_1,r_2,c,s)$};
+
+    \end{tikzpicture}
+  };
+\end{tikzpicture}

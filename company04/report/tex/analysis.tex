@@ -1,0 +1,185 @@
+% !TeX root = ../report.tex
+
+\section{Implementation Analysis}\label{sec:analysis}
+
+\begin{center}
+	\itshape
+	Analyse the implementation's efficiency: memory, communication and computation requirements.
+\end{center}
+
+Consider the operator $\card{x}$ that returns the size of the input $x$ and
+for the rest of the section, $\log(x)$ denotes $\ceil{\log_2(x)}$, i.e. representation bits for $x$.
+For example, representing an element in $\ZZ_q$ costs $\card{\in\ZZ_q} = \log(q)$, the
+ring $\card{\Rring[q]} = \card{q} + \card{f}$ with $f$ being the degree of the ring extension
+and an element of the ring $\card{ \in \Rring[q]} = \card{q} \cdot f$.
+
+Similarly, denote with the operator $\comp{x}$ the computational cost of executing $x$, e.g.
+the value $\comp{\vA}$ is the cost of multiplying for a $\Rring[q]^{n \times m}$ matrix, $\comp{+\vu}$
+is the cost of summing two vectors of size $\vu$ or $\comp{-\vx}$ for subtracting or changing the sing.
+For simplicity, the modulo $\pmod{\qprime}$ is not explicitly stated but to be considered in the costs.
+
+The section presents a theoretical analysis of the implementation space, computational
+and communication costs and some observations/suggestions for improvement.
+
+\vspace{3mm}
+\mindnote{
+	\emph{Personal Note:}
+	I prefer studying efficiency on pen-and-paper, especially for primitives/protocols,
+	mainly because measuring running code (sometimes) hides a lot of mysteries
+	(e.g. interpreter/compiler optimizations, architecture-specific memory handling, literally magic).
+	
+	I prefer measuring code timing whenever the analysis is focused on ``real(istic) simulations''
+	mainly coming from an application's requirement.
+}
+
+\subsection{Space and Memory Costs}\label{sec:analysis:space}
+
+A mandatory object that both the prover and verifier have is $\PoSW$'s public parameters $\pp$ with size,
+\[ \card{\pp} = \card{\secpar} + \card{\Rring[\qprime]} + \card{\pprime} + \card{n}
+	+ \card{m} + \card{\gamma_{\Rring}} + \card{S} \]
+%
+of which $\card{m} + \card{\gamma_{\Rring}}$ might be saved if they are quickly computable from
+$(n,\Rring[\qprime],\pprime)$.
+%
+In the implementation and as for the prototype's assumptions, $(\secpar,m,\gamma_{\Rring})$ and
+$f$ are fixed while $S$ must be of the form $S=\{a,a+1\}$ thus the effective implementation cost is:
+\[ \card{\pp} = \card{\Rring[\qprime]} + \card{\pprime} + \card{n} + \card{S} =
+	\card{\qprime} + \card{\pprime} + \card{n} + \card{\qprime} \]
+
+
+Regarding the challenge, the cost is all in the representation of $(\vA,\vx)$:
+\[ \card{\vA} + \card{\vx} = \left( n\cdot m + n \right)\cdot\card{\in\Rring[\qprime]} \]
+
+The evaluation $\evaluate$ algorithm outputs $\vy$ and the witness $\witness$ with
+weights\footnote{I used $\simeq$ because it might be that $q < p^l$ thus
+	there is technically a small difference.},
+\[
+	\begin{cases}
+		\card{\vy} + \card{\witness} = n \cdot \card{\in\Rring[\qprime]} + T \cdot \card{\vu[i]}\\
+		\card{\vu[i]} = m \cdot \card{\pprime} \cdot f = n \cdot l \cdot \card{\pprime} \cdot f
+		\simeq n \cdot \card{\qprime} \cdot f = n \cdot \card{\in \Rring[q]}
+	\end{cases}
+\]
+for a total cost of 
+\[ \card{\vy} + \card{\witness} = n \cdot (T+1) \cdot \card{\in\Rring[\qprime]}\]
+%
+Regarding the computational memory cost while computing $\evaluate$, the prover must maintain a
+single register of size
+$\card{\vu[i]}$ where the results of the $\vGi,\vA$ evaluations are effectively computed.
+
+\vspace{2mm}
+
+For both the prover and verifier, the verification protocol must maintain a state for which memory
+costs have a maximum, for the prover, at the beginning and later reduce because of the folding/release
+of witnesses.
+At the start, the cost is,
+\[ \card{\vA} + \card{\vx} + \card{\vy} + \card{T} +
+	\underbrace{\card{\witness}}_{\text{\footnotesize prover}} =
+	\left( n\cdot m + 2n \right)\cdot\card{\in\Rring[\qprime]} + \card{T} 
+	+ \underbrace{ n \cdot \card{\in \Rring[q]}}_{\text{\footnotesize prover}}\]
+
+
+
+\subsection{Computational Cost}
+
+The computational cost of $\init$ is mainly storing/sampling the parameters dependent from $\secpar$
+while generating the challenge requires the sampling of $n\cdot m +n$ elements in $\Rring[\qprime]$.
+This algorithm's computational costs highly depend on the sampling $\comp{\sample \Rring[\qprime]}$
+efficiency.
+
+
+The effective computational cost depends on some basic operations, namely:
+\begin{itemize}
+	\item $\vGi$ action: transforming an element $\vu \in \Rring[q]$ in $\pprime$-ary notation
+	\item $\vG$ action: transforming $\pprime$-ary notation in an element $\vu \in \Rring[q]$,
+		done by a matrix multiplication
+	\item $\vA$ action: matrix multiplication
+	\item element-wise operations, e.g. checking equality of two vectors, sum or negate a vector
+	\item sampling from $S$
+\end{itemize}
+
+The evaluation procedure executes $T$ times a $p$-ary transformation, the negation of $\vu$ and the
+multiplication $\vA \vu$ with total cost,
+\[ T \cdot \left(\comp{ \vGi } + \comp{- \vu} + \comp{\vA}\right)\]
+
+
+Regarding proving and verifying, the computational cost depends on $T$ which
+implies\footnote{The total amount $t_1+t_2$ of communication rounds is equal to the number of
+multiplications executed in the Chandah-sutra exponentiation method.
+Integer sequence: \url{https://oeis.org/A014701}}
+a specific
+amount $t_1$ of no-foldings ($T = 2t$) and $t_2$ of foldings ($T=2t+1$).
+The sum is lower bounded $t_1 + t_2 \leq \log{T}$ with equality when $t_1 = 0$, i.e. there are only
+foldings which corresponds to $T = 2^k -1$ for some $k \in \NN_{>0}$.
+
+For the $\prove$ algorithm, the prover must compute
+\begin{align*}
+	& t_1 \cdot \left( \comp{\vG}+\comp{-\vx} +\comp{T-1} \right) +\\
+	& + t_2 \cdot \left( \comp{\vA} + \comp{r\cdot \vy} + \comp{+\vx} + \comp{r\cdot \vy}
+		+ \comp{-\vx} + \comp{\vG} + 2\comp{\cdot\beta} + \comp{+\vu} + \comp{r\cdot \vu}\right)
+\end{align*}
+while the verifier has the checks as additional computations,
+\begin{align*}
+	& 1 \cdot \left(
+		\comp{\in \Rring[\beta]^m} + \comp{\vG} + \comp{=\vx} + \comp{\vA} + \comp{=\vy}\right) +\\
+	& + t_1 \cdot \left(
+		\comp{\in \Rring[\beta]^m} + \comp{\vA} + \comp{=\vy} +
+		\comp{\vG}+\comp{-\vx} +\comp{T-1} \right) +\\
+	& + t_2 \cdot \left(
+		\comp{\sample S} + \comp{\in \Rring[\beta]^m} +
+		\comp{\vA} + \comp{r\cdot \vy} + \comp{+\vx} + \comp{r\cdot \vy}
+		+ \comp{-\vx} + \comp{\vG} + 2\comp{\cdot\beta}\right)
+\end{align*}
+
+
+The computation with highest cost is the matrix multiplication $\comp{\vA \cdot \vu}$ which
+costs $m \cdot n = n^2 \cdot l$ multiplications (naively) in $\Rring[q]$ for a total
+``rule-of-thumb'' (i.e. asymptotic) cost of
+$\asymp{n^2 \cdot \log_{\pprime}(\qprime) \cdot \comp{ \times \Rring[q]}}$
+where all the parameters (seem to be) depend on $\poly[\secpar]$.
+The multiplication $\vG\cdot\vu$ takes only $m = n \cdot l$ field multiplication because
+of the sparse representation of $\vG$, i.e. functionally it is a diagonal matrix.
+%
+In asymptotic form, the total cost for the prover $\advP$ and verifier $\advV$ is:
+\[ \comp{\advP} = \comp{\eval} + \comp{\prove}
+	\sim
+	\asymp{(T + t_2) \cdot n^2 \cdot \log_{\pprime}(\qprime) \cdot \comp{ \times \Rring[q]}}
+	\qquad \comp{\advV} \sim \asymp{(1 + t_1 + t_2) \cdot n^2 \cdot
+		\log_{\pprime}(\qprime) \cdot \comp{ \times \Rring[q]}}\]
+
+\paragraph{Minor Optimisation.}
+
+As a possible computational optimization with some space cost, both the prover and verifier can
+pre-compute $(\pprime^i)_{i=2}^{l}$ to halve the number of multiplications when computing $\vG(\vu)$.
+The additional space cost would be $l \cdot \card{\qprime}$.
+
+\vspace{1mm}
+\mindnote{
+	I'm struggling to get a better/concrete complexity because the majority of parameters are in
+	asymptotic format which would require a thorough analysis of $\msf{SIS}$'s (concrete) security
+	which I couldn't quickly do and/or don't precisely know/remember at the moment.
+}
+
+\subsection{Communication}\label{sec:analysis:communication}
+
+The initialization and challenge generation must share the public parameters $\pp$, challenge
+$(\vA.\vx)$ before-hand, with cost (from \Cref{sec:analysis:space}):
+\[
+	\card{\pp} + \card{\vA} + \card{\vx} =
+		\card{\secpar} + \card{\Rring[\qprime]} + \card{\pprime} + \card{n}
+		+ \card{m} + \card{\gamma_{\Rring}} + \card{S} +
+		 \left( n\cdot m + n \right)\cdot\card{\in\Rring[\qprime]}
+\]
+
+I assume that the communication starts with either prover or verifier sharing the value $T$ with
+communication cost $\log(T)$.
+%
+From the protocol, it is easy to see that the prover sends $(1+t_1+t_2)$ values $\vu[i]$
+while the verifier only replies with $t_2$ random value $r$.
+This implies a total communication cost of,
+\[ \card{\prove+\verify} = \log(T) + (1+t_1+t_2)\cdot \card{\vu[i]} + t_2 \cdot \card{r \in S} =
+	\log(T) + (1+t_1+t_2)\cdot n \cdot \card{\in \Rring[q]} + t_2 \cdot \log(\#{S})
+\]
+where $\#S$ indicates the cardinality of $S$ since, despite the elements of $S$ having size
+$\card{\in S} = \log(q)$, the primitive can uniquely index $S$ thus only requiring
+to share the sampled index with size $\card{\#S} = \log(\#S)$.

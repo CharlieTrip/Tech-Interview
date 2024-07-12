@@ -1,0 +1,440 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage{fullpage}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{stmaryrd}
+\usepackage{mathtools}
+\usepackage{epsfig}
+\usepackage{hyperref}
+\usepackage{epstopdf}
+\usepackage{color}
+\usepackage{colortbl}
+\usepackage{multirow}% http://ctan.org/pkg/multirow
+\usepackage{hhline}%
+\usepackage{lscape}
+\usepackage{graphicx}
+\usepackage[inline]{enumitem}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{tikz-cd}
+\usepackage{cleveref}
+\usepackage{url}
+\usepackage[makeroom]{cancel}
+
+\usepackage{amsthm}
+\usepackage{slashed}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,graphs,quotes,decorations,intersections,calc}
+\usetikzlibrary{fit}
+\usepackage{tikzpeople}
+
+\usepackage[
+lambda,advantage,adversary,probability,
+sets,notions,asymptotics,keys,
+operators,ff,primitives
+]{cryptocode}
+
+\newcolumntype{C}[1]{>{\centering\arraybackslash}m{#1}}
+
+\usepackage{tcolorbox}
+\newcommand{\say}[1]{\emph{``{#1}''}}
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ 
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  firstnumber=1,                   % start line enumeration with line 1
+  frame=single,                    % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language=Octave,                 % the language of the code
+  morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,                     % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+
+\input{cBnotation.tex}
+
+
+\usepackage{todonotes}
+\newcommand{\cbnote}[1]{\todo[inline,caption={},color=red!10]{\footnotesize{}cB: #1}}
+\newcommand{\metanote}[1]{\todo[inline,caption={},color=gray!10]{\footnotesize{}#1}}
+\newcommand{\probnote}[1]{\todo[inline,caption={},color=blue!10]{\footnotesize{}#1}}
+
+\author{Carlo Brunetta}
+\title{Technical Assessment}
+
+\begin{document}
+
+	\maketitle
+
+	% ---
+	FRI-based polynomial commitment schemes are commonly used for building transparent zkSNARKs.
+	Some variants of such schemes have a wide range of parameters for finding a trade-off between
+	the performance and security of the overall system.
+	For example, a larger proximity parameter of the FRI protocol allows for a more efficient
+	commitment scheme but requires careful consideration when analyzing the system's security level.
+
+	We propose to consider two specific proof systems, Redshift~\cite{EPRINT:KPV19} and
+	Plonky2~\cite{Plonky2} (both use the FRI-based commitment scheme), and answer the following
+	research questions.
+
+	\begin{enumerate}
+
+		\item Redshift describes ways to guarantee the uniqueness of setup polynomials
+			(see section 4.3~\cite{EPRINT:KPV19}).
+			Namely, they propose to use extra evaluation points. How many extra points will ensure a
+			128-bit security level for a 256-bit finite field and code rate $= \frac{1}{8}$?
+		
+		\item Describe (briefly) how an attacker can exploit the absence of such extra points.
+		
+		\item Does the Soundness notion capture such types of attacks?
+		
+		\item Does Plonky2 use extra evaluation points? If yes, how many are used? Why exactly so many?
+			If not, is the system still safe to use? Why?
+		
+		\item Can the attack described in the first answer be applied to Plonky2?
+	\end{enumerate}
+
+	To prepare your answers, you may need to refer to the source code of these proof systems.
+	We expect you to prepare your answer using \LaTeX.
+
+
+	\section{Preliminaries}
+
+		Let $\FF[X]$ denote the polynomial ring over the field $\FF$ and the set of functions from $D$ to $C$
+		as $C^D$.
+		Let $f \in \FF^D$ and denote $\interpolant{f}$ as the unique polynomial
+		$\interpolant{f}(X) = \sum_{i=0}^{\card{S}-1} a_i X^i$ with degree
+		$\polydeg{\interpolant{f}} < D$ with same graph as $f$, \ie\
+		$\forall_{s \in S}, f(s) = \interpolant{f}(s)$.
+		%
+		For a set $L$, let $\zeropoly{L} = \prod_{l_i \in L} (X-l_i)$ be the unique polynomial with
+		degree $\polydeg{\zeropoly{L}} = \card{L}$ that vanishes on $L$.
+
+		Define the Reed-Solomon code of rate $\rho \in (0,1] $ evaluated over $D$ on the field $\FF$ as
+		the set of functions,
+		\[ \rs{\FF}{D}{\rho} = \left\{ \vphantom{\sum}f : D \to \FF \quad \middle\lvert \quad
+			\polydeg{f} < \rho \cdot \card{D} \right\} \]
+		To later make sense, $D$ must be an affine subspace of $\FF$ whenever $\FF = \FF_{2^m}$ while for
+		$\FF = \FF_p$ for some prime $p$, $D$ is a multiplicative subgroup of $\FF_p$.
+		%
+		Define the Hamming distance between two polynomials $f,g: D \to \FF$ as
+		$\hamdist{f}{g} = \card{ \{ a \in D \:\mid\: f(a) \neq g(a) \}}$ and the distance between
+		a polynomial and a set of function as $\hamdist{f}{G} = \min_{g \in G} \hamdist{f}{g}$.
+		The relative Hamming distance is obtained by normalizing the distance with respect to $\card{D}$.
+		
+		
+		\subsection{Polynomial Commitment Scheme}
+		
+		A polynomial commitment scheme is a scheme that allows a prover to publicly commit to a function
+		$f$ and later provide proof of evaluation correctness of $f(\alpha)$ to the input $\alpha$
+		provided by a verifier.
+		
+		\begin{definition}\label{def:polycom}
+			A polynomial commitment scheme $\proto{}$ is a tuple of algorithms:
+			\begin{itemize}
+				\item $\setup(\secpar,\FF,d) \to \pp$: given security parameter $\secpar$, field $\FF$ and 
+					maximal degree $d$, generates the schemes public parameters $\pp$.
+				\item $\pcommit(\pp,f(X)) \to \comm{f}$: given the public parameters and a polynomial $f(X)$,
+					the prover outputs a commitment $\comm{f}$.
+				\item $\ppolyverify(\pp,f(X), \comm{})$: given the public parameters, a polynomial $f(X)$
+					and a commitment $\comm{}$, output if the polynomial is consistent with the commitment.
+				\item $\popen(\pp,f(X), \alpha) \to (y, \proo{})$: given public parameters,
+					a prover is asked by a verifier to provide the evaluation of $f(\alpha)$ for a verifier's
+					chosen value $\alpha$.
+					The prover provides the evaluation $y$ and a correctness proof $\proo{}$.
+				\item $\pverify(\pp,\comm{f},\alpha,y,\proo{})$: given the public parameters, a poylnomial
+					commitment $\comm{f}$, an evaluation point $\alpha$, the result of the evaluation $y$ and
+					proof $\proo{}$, the verifier verifies the correctness of the evaluation $y = f(\alpha)$
+					by accepting or rejecting the proof.
+			\end{itemize}
+		\end{definition}
+		
+		If the generation can be done without the involvement of a trusted third party (or similar),
+		the commitment scheme is said to be \emph{transparent}.
+		%
+		A polynomial commitment scheme should achieve several properties, the most relevant ones are
+		(intuitively described):
+		
+		\begin{itemize}
+			\item \emph{Polynomial binding}:	the commitment should bind the polynomial meaning that once
+				the prover publishes $\comm{f}$, it is difficult to find another polynomial $g$ of degree
+				$\polydeg{g} \leq d$ with the same commitment.
+			
+			\item \emph{Evaluation binding}: it is hard for the prover to cheat the opening meaning that
+				if the prover opens to an incorrect value $z \neq f(\alpha)$, with high probability the
+				verifier will reject the proof.
+				
+			\item \emph{Polynomial hiding}: the verifier should be unable to obtain too much information
+				on the polynomial from the opening (of course within limitation on the number of evaluations
+				allowed).
+			
+			\item \emph{Succinctness}: the scheme has short proofs and computation times.
+				More specifically, we care only on schemes that communication costs and computation time
+				poly-logarithmic in the polynomial degree $\polydeg{f}$.
+		\end{itemize}
+		
+
+
+		\subsection{Fast Reed-Solomon IOPP}
+		
+			Both \redshift\ and \plonkyy\ are based on the Fast Reed-Solomon Interactive oracle proofs
+			of proximity~\cite{ICALP:BBHR18} (FRI) which is a protocol that allows a prover to 
+			show that a function $f$ is $\delta$ close to a polynomial in $\rs{\FF}{L^{(0)}}{\rho}$.
+			
+			There are some subtle differences between the two which provide differences in efficiency
+			and security~\cite[Sec.6.2]{Plonky2}:
+			\redshift\ utilizes \FRI\ as originally described by Ben-Sasson et al.~\cite{ICALP:BBHR18}
+			despite some improvements are already discussed in the appendix.
+			
+			\plonkyy\ is based on \DEEPFRI~\cite{EPRINT:BGKS19}
+			which is an improved version of \FRI~\cite{ICALP:BBHR18} where an additional evaluation
+			point outside the domain is used to increase the soundness guarantees.
+			Additionally, \plonkyy\ mainly uses batching, \ie\ several polynomials
+			$\{f_i\}_{i=0}^{\card{B}-1}$ are linearly combined using a verifier's provided
+			random scalar $\lambda$ as $h(X) = \sum_{i=0}^{\card{B}-1} \lambda^i \cdot f_i(X)$
+			and later the \FRI\ protocol is executed on $h(X)$ which values opening can be
+			computed from opening the values of $f_i(X)$ and computing the correct
+			linear combination using $\lambda$.
+			%
+			Furthermore, \plonkyy\ utilizes Merkle cap instead of Merkle root~\cite{EPRINT:ChiYog21},
+			\ie\ a sorted list of Merkle root of the subtrees on a specified stopping level, and
+			\emph{grinding} which is a forced proof-of-work that the prover must execute and improve
+			the soundness guarantees.
+			
+			Despite the differences between the \FRI's protocol used between \plonkyy\ and \redshift,
+			the rest of the document will discuss the effective differences in how the two are used
+			to obtain a polynomial commitment scheme.
+			
+			
+			
+
+	\section{\redshift}
+
+		Proving \FRI\ implies that the code rate $\rho$ is chosen in such a way guarantee the
+		uniqueness of the closest polynomial $p \in \rs{\FF}{D}{\rho}$ such that
+		$\hamdist{f}{p} < \delta$.
+		%
+		\redshift\ tweaks this idea by considering a list of close polynomials
+		$(p_i)_{i\in I} \subseteq \rs{\FF}{D}{\rho}$ s.t. each polynomial is close, \ie\
+		$\hamdist{f}{p_i} < \delta$.
+		Having such a list can guarantee the protocol to prove the existence of a close
+		polynomial but not necessarily the uniqueness.
+		This is the core of \redshift's \emph{list polynomial commitment} idea.
+		
+		\subsection{Too Many Close Polynomials}
+		
+		However, there is a problem when trying to guarantee the evaluation correctness of the
+		setup polynomial $s(X)$ from which output defines specific constrain which must be
+		correct and verified and not confused with the evaluation of one of the close polynomials
+		$g_i \in \rs{\FF}{D}{\rho}$.
+		Technically, the verifier can compute such constraints ($s$ is known since it's a setup polynomial)
+		however in a non-succinct way since they must evaluate $s(X)$ which is linear in $\polydeg{s}$.
+		
+		To avoid this problem, both the prover and verifier can compute the decoding list $L_{\delta}(s)$
+		of polynomials $\delta$-relatively close to the setup polynomial $s(X)$ and later find a
+		value $\xi$ such that $s(\xi) \neq g_i(\xi)$ for all $g_i \in L_{\delta}(s)$.
+		This evaluation point is used to distinguish $s(X)$ from all the other close polynomials.
+		
+		\redshift's authors suggest two wait to find such a point.
+		The first method computes the decoding list $L_{\delta}(s)$ which has cost $\complexity{\card{D}^3}$
+		for $\delta < 1 - (d-N-\mu)$ where $D$ is the function domain, $d$ the maximal degree considered,
+		$N$ number of evaluation points and $\mu$ the number of repetitions while, when considering
+		equality, the complexity increases to $\complexity{\card{D}^{15}}$.
+		Once the close polynomials are found, with an overhead linear in $\card{D}$, it is possible 
+		to find such distinguishing point $\xi$.
+		
+		The second method is based on random sampling $\mu$ points and uses them as distinguishing points.
+		Due to the Schwartz-Zippel lemma, with high-probability these points will indeed separate
+		$s$ from the corresponding list $g \in L_{\delta}(s)$.
+		This takes $\complexity{\mu\cdot d}$ which is substantially faster when $d \sim \card{D}$
+		however at the cost of a reduced soundness guarantee.
+		
+		
+		\probnote{
+			Describe (briefly) how an attacker can exploit the absence of such extra points.
+		}
+		
+		The absence of the distinguishing point(s) provides an insecurity when committing polynomials 
+		and requiring them to be uniquely binded (such as setup polynomials).
+		%
+		Consider the setup polynomial $s(X)$ and the corresponding decoding list $L_{\delta}(s)$.
+		Each close polynomial $g \in L_{\delta}(s)$ is $\delta$ close to $s(X)$ thus an adversary
+		can switch the polynomial $s(X)$ with $g(X)$ which has a non-empty decoding list
+		intersection $L_{\delta}(s) \cap L_{\delta}(g) \neq \emptyset$.
+		%
+		This implies that the adversary forces a wrongful setup polynomial $g(X)$ which might have
+		(in some relevant evaluation point $\alpha$) a different value $g(\alpha) \neq s(\alpha)$.
+		
+		For example and intuitively, in the \redshift's instantiation of Algorithm~2~\cite{EPRINT:KPV19},
+		an adversary able to force a wrong output for the setup polynomials $q_j,S_{i_j},S_{\sigma_j}$
+		can force a different circuit to be calculated (by modifying the appropriate evaluation of $q_j$
+		and/or how the index are permuted by $S_{i_j},S_{\sigma_j}$).
+		
+		
+		\probnote{
+			Does the Soundness notion capture such types of attacks?
+		}
+	
+		The soundness definition does not capture such an attack because, from a relation point of view,
+		the proof provided for the wrong but still $\delta$-close polynomial $g(X)$ is correct
+		because generated for the intersection of the decoding lists
+		$L_{\delta}(s) \cap L_{\delta}(g) \neq \emptyset$ thus allowing the existence of an element
+		in the relation.
+		%
+		Intuitively, adding the distinguishing evaluation point adds a constraint in the relation
+		that allows the unique identification of the witness, \ie\ the relation turns into
+		something like ``the witness polynomial is $\delta$-close to the decoding list \textbf{and}
+		the distinguishing evaluation is different from \emph{all} the decoded polynomials''.
+		
+		
+		\subsection{Concrete Parameters}
+		
+		\probnote{
+			Redshift describes ways to guarantee the uniqueness of setup polynomials
+			(see section 4.3~\cite{EPRINT:KPV19}).
+			Namely, they propose to use extra evaluation points.
+			How many extra points will ensure a 128-bit security level for a 256-bit finite field
+			and code rate $= \frac{1}{8}$?
+		}
+		
+		To provide concrete parameters for the polynomial commitment scheme, let us focus on the
+		results provided by Thm.~4, Thm.~5, Claim~1, Thm.~6 respectively stating the list
+		polynomial commitment's soundness is the sum of the \FRI\ and the distinguisher's soundness,
+		the distinguishing soundness obtained from the random sampling and how all the pieces
+		come together for the polynomial commitment parameters.
+		
+		\[ \underbrace{ \frac{2 \log(\card{D})}{\eta^3 \card{\FF}} +
+			\left(1 - \min\{\delta_0,\delta\} + \eta\log(\card{D})\right)^\mu }_{\text{\FRI\ sound.}} +
+			\underbrace{ \left(\frac{d}{\card{\FF}} \cdot \left(J_{\rho,\nu} -1\right) \right)^\mu }_{\text{Dist. sound.}} \]
+		
+		We are interested in soundness $< 2^{-128}$, field $\log(\card{\FF}) = 256$ and code rate
+		$\rho= \frac{1}{8}$.
+		
+		Similarly to the author's argument~\cite[Sect.6]{EPRINT:KPV19}, consider 
+		$\nu = \card{\FF}^{-\frac{1}{20}}$ which provides a decoding list size of
+		$\frac{\rho^{-\frac{1}{2}}}{2} \card{\FF}^{\frac{1}{20}} = J_{\rho,\nu}$.
+		%
+		Furthermore, $\log(\card{D}) - 3 = \log(d - N - \mu)$ and $d-N-\mu > 16$ where $d$ is the degree,
+		$N$ the number of extra evaluation points and $\mu$ the number of repetitions.
+		For the sake of simplicity, consider $N=1$ as in a single opening of an evaluation of the
+		committed function meaning $d\sim \card{D}$.
+		We consider the \FRI\ protocol to be executed for all the $\log(d)$ rounds meaning that the
+		amount of verifier's queries are $l \sim 2\cdot\log(d)$ and with $\card{D} = 2^{32}$ as the
+		authors discuss.
+		Finally, $\delta_0 = \frac{1-\rho}{2}$ and $\delta \in (0, 1 - \sqrt{1-(1-\rho)\cdot (1-\nu)}$
+		meaning $\delta_0 = \frac{7}{16}$ and $\delta \in \sim(0, \frac{10}{16})$
+		
+		By putting everything together, we get that,
+		
+		\begin{align*}
+			\frac{2 \log(2^{32})}{2^{-\frac{(256) \cdot 3}{20}} \cdot 2^{256}} +
+				\left(1 - \min\{\delta_0,\delta\} + 2^{-\frac{256}{20}}\log(2^{32})\right)^{\mu} +
+				\left(\frac{2^{32}}{2^{256}} \cdot \left(\frac{2^{\frac{3}{2}}}{2}
+				2^{\frac{256}{20}} -1\right) \right)^\mu  &< 2^{-128}\\
+			\frac{2^6}{2^{217.6}} +
+				\left(1 - \frac{7}{16} + 2^{-7.8}\right)^{\mu} +
+				\left(\frac{2^{13.3}}{2^{224}}\right)^\mu &< 2^{-128}\\
+			0.5625^\mu + 2^{-210.7 \mu}
+				&\lesssim 2^{-128} - 2^{211.6}\\
+				\mu &\gtrsim \frac{-128}{-0.83} \simeq 154.2
+		\end{align*}
+
+		If the committed polynomial must be binded, this implies $\mu \sim 155$ repetition of the \FRI\
+		protocol implying $\mu$ additional points.
+		
+		The authors provide a soundness analysis for \redshift\ instantiated as a Plonk-like
+		system~\cite[Sec.6]{EPRINT:KPV19}.
+		Despite having similar security parameters, \ie\ they focus on $80$-bit security instead
+		of $128$, the field dimensions already provide a high soundness guarantee for the distinguisher
+		used in the list polynomial commitment scheme.
+		However, their \FRI\ soundness estimation is $\sim 0.504$ for the same $\nu$ but $\rho = \frac{1}{16}$
+		which is in line with the $\sim 0.5625$ obtained in our case with $\rho = \frac{1}{8}$.
+		The computed amount $\mu$ looks coherent with the amount of repetition presented in Table~1
+		considering that the table is limited to $80$-bit of security and $\rho=\frac{1}{16}$.
+		
+		
+
+		
+	\section{\plonkyy}
+		\plonkyy\ is based on \sffont{TurboPLONK} on which provides an extensive amount of
+		circuit gadget's improvements and specific parameter choices to increase the performance
+		and efficiency of the protocol.
+		As additional differences from \redshift, \plonkyy\ utilizes the Domain Extending
+		for Eliminating Pretenders \FRI\ (\DEEPFRI)~\cite{EPRINT:BGKS19}
+		for the polynomial commitment scheme and it allows recursion, \ie\ intuitively the scheme's proving
+		computation can be proved by the same scheme thus allowing to
+		aggregate and compress proofs to a smaller size and with higher computational efficiency.
+		
+		
+		\subsection{Differences}
+		\probnote{
+			Does Plonky2 use extra evaluation points?
+			If yes, how many are used?
+			Why exactly so many?
+			If not, is the system still safe to use?
+			Why?
+		}
+		\probnote{
+			Can the attack described in the first answer be applied to Plonky2?
+		}
+		
+		
+		To accommodate recursion, the polynomial distance $\delta$ must be larger introducing multiple
+		binding polynomials thus creating the same argument as \redshift.
+		Similarly to \redshift, \plonkyy\ requires an additional evaluation point used to correctly
+		bind the commitment to a specific polynomial however how binding is guaranteed is different.
+		
+		Instead of requiring an evaluation point $\alpha$ in which the polynomial $s(X)$ is different
+		from all the other $\delta$-close polynomials $g_i(X)$, \plonkyy\ requires a $\zeta$ value
+		chosen from the considered extension field $\FF_p(\phi)$ (\ie\ $\FF_p[X] / (X^2 - 7)$, a
+		degree $1$ polynomial basically) and all the protocols' polynomials are evaluated on such
+		point~\cite[Sec. 7.2, point 6]{Plonky2}.
+		%
+		This is part of the \DEEP\ methodology where to discriminate between several possible
+		$\delta$-close polynomials, the verifier requests the evaluation $f(\zeta)$ on a random
+		element $\zeta$ outside the domain and considers the quotient regarding such evaluation.
+		Intuitively, the only way for the wrong $\delta$-close polynomial $g$ to have the
+		quotient $\frac{g(X) - f(\zeta)}{X-\zeta}$ to be a polynomial by either having $g=f$ 
+		(an argument \emph{a-la} Schwartz-Zippel lemma) or $g$ has some
+		peculiar shape which, most likely, will be inconsistent with being $\delta$-close or
+		$g(\zeta) = f(\zeta)$.
+		
+		Additionally, the additional evaluation is verified with the oracle's commitment thus an
+		adversary providing wrong evaluation will be spotted since the \FRI\ protocol is executed on the
+		quotient polynomial.
+		%
+		For \plonkyy\, the majority of these checks are effectively executed during the \FRI's
+		protocol execution, since the prover batch aggregates all the quotient polynomials to prove into
+		a single linear combination using coefficients provided by the verifier.
+		
+	\bibliographystyle{alphaurl}
+	\bibliography{biblio}
+
+\end{document} 

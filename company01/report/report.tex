@@ -1,0 +1,502 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage{fullpage}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{stmaryrd}
+\usepackage{mathtools}
+\usepackage{epsfig}
+\usepackage{hyperref}
+\usepackage{epstopdf}
+\usepackage{color}
+\usepackage{colortbl}
+\usepackage{multirow}% http://ctan.org/pkg/multirow
+\usepackage{hhline}%
+\usepackage{lscape}
+\usepackage{graphicx}
+\usepackage[inline]{enumitem}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{tikz-cd}
+\usepackage{cleveref}
+\usepackage{url}
+\usepackage[makeroom]{cancel}
+
+\usepackage{amsthm}
+\usepackage{slashed}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,graphs,quotes,decorations,intersections,calc}
+\usetikzlibrary{fit}
+\usepackage{tikzpeople}
+
+\usepackage[
+lambda,advantage,adversary,probability,
+sets,notions,asymptotics,keys,
+operators,ff,primitives
+]{cryptocode}
+
+\newcolumntype{C}[1]{>{\centering\arraybackslash}m{#1}}
+
+\usepackage{tcolorbox}
+\newcommand{\say}[1]{\emph{``{#1}''}}
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ 
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  firstnumber=1,                   % start line enumeration with line 1
+  frame=single,                    % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language=Octave,                 % the language of the code
+  morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,                     % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+
+\input{cBnotation.tex}
+
+
+\usepackage{todonotes}
+\newcommand{\cbnote}[1]{\todo[inline,caption={},color=red!10]{\footnotesize{}cB: #1}}
+\newcommand{\metanote}[1]{\todo[inline,caption={},color=gray!10]{\footnotesize{}#1}}
+\newcommand{\probnote}[1]{\todo[inline,caption={},color=blue!10]{\footnotesize{}#1}}
+
+\author{Carlo Brunetta}
+\title{Technical Assessment}
+
+\begin{document}
+
+\maketitle
+
+
+\subsection{Document Structure}
+Personal thoughts/solving processes are highlighted into grey boxes such as,
+\metanote{
+  this one! This is where I add mental notes.\\
+  The notes might not be precise or correct but they are part of my solving process.
+}
+\noindent
+The document will follow the effective analysis timing.
+
+The problems are iteratively solved following the mantra: \emph{``read, take notes and repeat''}, thus trying to trace a solution shape as quickly as possible.
+To achieve this, missing steps/problems will be highlighted for future analysis and will be highlighted
+in blue boxes such as,
+\probnote{Read the assignments and solve them!}
+
+
+% ---
+
+
+\section{Multi-Party Exponentiation}
+
+\probnote{
+  To solve the problem:
+  \begin{enumerate}
+    \item Read the paper \cite{FC:AAS18} and protocols (both for notation and context of the protocol).
+    \item Point out what must be proven.
+    \item Prove it!
+    \item Check the code and pen-paper design of the proof of concept (PoC) implementation.
+    \item Implement it
+  \end{enumerate}
+}
+
+\subsection{Proving Security}
+
+Denote the protocols of interest, Protocol 5 and Protocol 6, as $\proto{5},\proto{6}$ of which security
+is defined in the UC framework.
+The paper assumes the existence of an ideal \emph{arithmetic black box} functionality $\Fabb$, defined
+and instantiated by Damg\aa{}rd et al.~\cite{TCC:DFKNT06}.
+Assuming the latter is proven secure in the UC framework, to prove $\proto{5},\proto{6}$ UC-secure 
+one must show that the exponentiation protocol $\pexp(b,\shares{a})$ required in $\proto{5},\proto{6}$,
+not provided by $\Fabb$, is UC-secure.
+
+The authors report a UC-secure protocol \proto{2}~\cite{TCC:DFKNT06} of which efficiency depends on the
+exponent bit-length.
+%
+They provide a more efficient (independent on input bit-length, dependent on the amount of parties)
+protocol \proto{4} which is pointed out to be insecure against active adversaries.
+This protocol is utilized in \proto{5} and \proto{6}: briefly, \proto{4}\ is executed
+twice with different inputs, related by an introduced randomness, and a final reconstruction verifies
+that the protocol computation was indeed correctly executed.
+
+\probnote{Check what the suggested active attack on \proto{4}\ does and if this can affect
+  $\proto{5}$ or $\proto{6}$.}
+\metanote{Composition of non UC-secure protocols (e.g. $\proto{4}$) is rarely (almost never) UC-secure.\\
+  A quick skim of \cite{TCC:DFKNT06} shows the inexistence of \proto{2} as described.\\
+  Maybe the authors~\cite{FC:AAS18} considered the exponentiation in the instantiation as part of the
+  functionality protocol?
+  Damg\aa{}rd et al. instantiate \Fabb\ via Paillier cryptosystem which effectively encrypts by
+  computing several exponentiations \textbf{but} this does not represent \Fabb's operations.}
+
+To show UC-security of \proto{4} (\Cref{fig:proto4}), one should find a simulator $\simul$ able to
+emulate the ideal functionality $\Fexp$ with the execution of $\proto{4}$, even in the presence of
+any adversary $\advA$.
+The transcript is later provided to an environment $\advR$ which must distinguish between ideal
+or emulated execution.
+
+\subsection{Insecurity of $\proto{4}$}
+
+Observe that the environment $\advR$ can instantiate $\advA$ with an input $\Delta$ not
+known to the simulator $\simul$.
+This is key to the active attack on \proto{4}, as highlighted in \Cref{fig:proto4}.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{pchstack}
+      \procedure{Protocol $\proto{4}$: $\pexp(b,\shares{a})$}{
+        \forall_{P_i}:\: c_i \gets b^{\alpha_i \cdot a_i}\\
+        \shares{c_i} \gets \pshare\left( c_i \right)\\
+        \shares{b^a} \gets \pproduct\left( \prod_{i=1}^n \shares{c_i} \right)
+      }
+      \pchspace
+      \procedure{Adversarial $P_1=\advA(\Delta)$ execution of $\proto{4}$}{
+        \pccomment{Instantiated $\advA$ with uniform random $\Delta \neq 1$}\\
+        c_1 \gets b^{\alpha_1 \cdot a_1}\red{\cdot \Delta}\\
+        \shares{c_1\red{\cdot \Delta}} \gets \pshare\left( c_1 \red{\cdot \Delta} \right)\\
+        \shares{b^a \red{\cdot{\Delta}}} \gets \pproduct\left( \shares{c_1\red{\cdot \Delta}}
+          \cdot \prod_{i=2}^n \shares{c_i} \right)
+      }
+    \end{pchstack}
+    \caption{Protocol $\proto{4}$ and $\advA$'s malicious execution (highlighted in \red{red})
+      as, w.l.o.g., party $P_1$.}\label{fig:proto4}
+\end{figure}
+
+
+Allowing the party to independently compute $b^{\alpha_i \cdot a_i}$ opens the adversary
+to arbitrarily modify its share to any value; more specifically, we consider
+$b^{\alpha_i \cdot a_i} \red{\cdot \Delta}$ where $\Delta \neq 1$ and provided by the environment during
+the initialization phase.
+When reconstructing the shares, the output will be $b^{a} \red{\cdot \Delta}$ thus corrupted.
+
+\subsection{Insecurity of $\proto{6}$}
+
+Let us report \proto{6}\ in \Cref{fig:proto6} and highlight the attack.
+$\advA$ participates in the $\pexp$ executions by maliciously injecting the instantiation
+coefficient $\Delta_1 = \Delta$ and later injects $\Delta_2 = \Delta^{-1}$.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{pchstack}
+      \procedure{Protocol $\proto{6}$: $\pexp(b,\shares{a})$}{
+        \shares{b^a\red{\Delta_1}} \gets \pexp(b,\shares{a})\\
+        \shares{r} \gets \psrand(\ZZ_p^*)\\
+        \shares{a^\prime} \gets \pproduct(\shares{a},\shares{r}-\shares{1})\\
+        \shares{b^{a^\prime}\red{\Delta_2}} \gets \pexp(b,\shares{a^\prime})\\
+        \shares{w} \gets \pproduct(\shares{a},\shares{r})\\
+        w \gets \popen(\shares{w})\\
+        \shares{r^\prime} \gets \psrand(\ZZ_q^*)\\
+        %
+        \shares{v} \gets \pproduct(\shares{r^\prime},
+          \pproduct[\pproduct(\shares{b^a\red{\Delta_1}},\shares{b^{a^\prime}\red{\Delta_2}}), b^{-w}]
+          - \shares{1}) + \shares{1}\\
+        v \gets \popen(\shares{v})
+      }
+    \end{pchstack}
+    \caption{Protocol $\proto{6}$. Highlighted in \red{red} the weak exponential
+      executions.}\label{fig:proto6}
+\end{figure}
+
+The injected coefficients cancel out and allow the correct opening of $v$ to $1$; however the
+exponentiation shares opens to the incorrect value $b^{a}\red{\cdot \Delta}$.
+A simulator $\simul$ is able to emulate the attack, however it has $\frac{1}{q-1}$ probability of
+correctly guessing $\Delta$; thus, the environment has a high probability of distinguishing between
+real execution and ideal functionality.
+Therefore, 
+
+\begin{proposition}
+  Assuming UC-secure $\Fabb$ exists, consider the protocol $\proto{4}$
+  (\Cref{fig:proto4}), then $\proto{6}$ is UC-insecure.
+\end{proposition}
+
+From my quick search, $\proto{2}$ is not defined by Damg\aa{}rd et al.~\cite{TCC:DFKNT06}, thus it is
+not possible to check if it would allow $\proto{6}$ to be UC-secure.
+\probnote{Future development, search/design a UC-secure instantiation of $\pexp(b,\shares{a})$.}
+
+
+\subsection{Insecurity of \proto{5}}
+\metanote{While writing about the attack on $\proto{6}$, I noticed that $\proto{5}$ utilizes the other
+  exponentiation protocol $\pexp(\shares{b},a)$ (public exponent, private base).
+  This required to check the provided $\proto{7}$ since $\Fabb$ does not provide ideal functionality
+  and Damg\aa{}rd et al.'s reported protocol $\proto{1}$ is not defined in the original
+  paper~\cite{TCC:DFKNT06} (similarly as before).}
+
+Regarding security of $\proto{5}$, observe that the verification code must execute the public
+exponent exponentiation $\pexp(\shares{b^a},r)$ of which instantiation is provided by protocols
+$\proto{1}$ and $\proto{7}$, reported in \Cref{fig:proto57}.
+\probnote{Double-check UC-security and definition of Damg\aa{}rd et al.'s in \proto{1}~\cite{TCC:DFKNT06}}
+\probnote{Check if $\proto{7}$ is secure and, if not, how this can be used to attack $\proto{5}$}
+%
+Similarly to before, the adversary injects $\Delta$ in the first call of \proto{5}, i.e.
+$\shares{b^a \Delta_1}\gets \pexp(b,\shares{a})$, and later injects $\Delta^{-1}$ in the
+call $\shares{r^\prime\cdot \Delta^{-1}} \gets \pexp(g, \shares{r})$.
+This attack forces the exponentiation $\pexp(\shares{b^a \Delta},r)$ to output $\shares{b^{ar}}$
+which correctly verifies the computation (i.e. the protocol outputs $v=1$); however, the shares open
+to $b^a \Delta$ and, as before, allow the environment to distinguish between real and ideal
+execution.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{pchstack}
+      \procedure{Protocol $\proto{5}$: $\pexp(b,\shares{a})$}{
+        \shares{b^a \red{\cdot \Delta}} \gets \pexp(b,\shares{a})\\
+        \shares{r} \gets \psrand(\ZZ_p^*)\\
+        \shares{a^\prime} \gets \pproduct(\shares{a},\shares{r})\\
+        \shares{b^{a^\prime}} \gets \pexp(b,\shares{a^\prime})\\
+        r \gets \popen(\shares{r})\\
+        \shares{r^\prime} \gets \psrand(\ZZ_q^*)\\
+        \shares{v} \gets \pproduct
+          \left[\shares{r^\prime},\pexp(\shares{b^a\red{\cdot \Delta}},r) - \shares{b^{a^\prime}}\right]
+          + \shares{1}\\
+        v \gets \popen(\shares{v})
+      }
+      \pchspace
+      \procedure{Protocol $\proto{7}$: $\pexp(\shares{b\red{\cdot \Delta}},a)$}{
+        g \gets \sffont{getGenerator}\\
+        \shares{r} \gets \psrand(\ZZ_p^*)\\
+        \shares{r^\prime\red{\cdot \Delta^{-1}}} \gets \pexp(g,\shares{r})\\
+        \shares{c} \gets \pproduct(\shares{r^\prime\red{\cdot \Delta^{-1}}},\shares{b\red{\cdot \Delta}})\\
+        c \gets \popen(\shares{c})\\
+        c^\prime \gets c^a\\
+        \shares{e} \gets -a \cdot \shares{r}\\
+        \shares{b^a} \gets c^\prime \cdot \pexp(g,\shares{e})
+      }
+    \end{pchstack}
+    \caption{Protocol $\proto{5}$ and $\proto{7}$.
+      Highlighted in \text{red} the attack.}\label{fig:proto57}
+\end{figure}
+
+
+\begin{proposition}
+  Assume UC-secure $\Fabb$ exists, consider the protocol $\proto{7}$~\cite{FC:AAS18},
+  then $\proto{5}$ is UC-insecure.
+\end{proposition}
+
+\metanote{There might be an easier attack similar to the \proto{6}'s one by doing some
+  injection in the exponent $a+\delta$ but it would require some math to check where to
+  inject $\Delta^{-1}$.}
+
+
+% ---
+
+\subsection{Proof of Concept Implementation}
+
+\metanote{Before implementing the code, I designed the code pen-and-paper
+  with the goal of highlighting how (Shamir's) secret sharing is effectively incorporated
+  in the protocol.}
+
+The code is designed in several interconnected classes, as shown in \Cref{fig:expcode}, which can be
+described as:
+\begin{description}
+  \item[Finite Field] implements the finite field operations used by the other classes.
+  \item[Share] represents the secret share from the secret-sharing algorithm.
+  \item[Point] represents the evaluation point obtained from the secret-sharing algorithm and
+    used to identify the party and reconstruct the secret shared.
+  \item[Party] represents the protocol's party with its shares, points and
+    that collaborates in the protocol execution (via $\Fabb$ and $\pexp$).
+    The party has a corruption functionality that stores $\Delta$.
+    The $\pexp$ function can be set to be used in the attack.
+  \item[Secret Sharing] implements (Shamir's) secret sharing algorithm.
+  \item[Ideal $\Fabb$] implements the ideal functionality $\Fabb$ and has reference to all
+    the parties in the protocol.
+  \item[$\pexp(b,\shares{a})$] implements the protocols $\proto{4},\proto{5},
+    \proto{6},\proto{7}$ and a PoC of the attack to $\proto{6}$.
+\end{description}
+
+
+\begin{figure}[!ht]
+  \centering
+  \input{tikz/expcode}
+  \caption{Abstract representation of the implementation subdivided into classes.}\label{fig:expcode}
+\end{figure}
+
+To run the code, simply run:
+\begin{lstlisting}[language=bash]
+  $ python code/exp/main.py
+\end{lstlisting}
+
+
+Several warnings will appear which relate to specific implementation assumptions:
+\begin{itemize}
+  \item There is no input sanitization, i.e. there are no checks nor errors, no handling
+    for wrong parameters $n,t,p$ or the sampled objects $\Delta, \alpha_i,r_i$.
+    Forced \emph{always secure} intervals are used.
+  \item The \Fabb\ handles the whole protocol without simulating the effective parties communication.
+  \item $\pi_4,\pi_7$ only work for $n=t$.
+    This is because the parties must compute $b^{\alpha_i\cdot a_i}$ where $\alpha_i$ is the
+    Lagrange coefficient to be used for the reconstruction.
+    This coefficient depends on the parties used in the final reconstruction which modifies the
+    coefficients and the effective protocol execution (which should be limited to the $t$ 
+    parties that will reconstruct the final result).
+  \item Shares of exponents and finite field elements live in different groups.
+    The paper itself discusses strategies to do this transformation and points to a specific paper.
+    The PoC code naively opens and shares in the correct space leaving the correct handling for
+    future development.
+  \item The code only contains a showcase of $\proto{6}$'s attack.
+    The attack to $\proto{5}$ can be similarly implemented.
+\end{itemize}
+
+\probnote{
+  Further developments: 
+  \begin{itemize}
+    \item clean up the code and better handle the intrinsic difference between shares of exponents
+      and elements of the finite field.
+    \item find/define a secure and efficient protocol for the exponentiation (substitute $\pi_4$)
+    \item for completeness, implement attack to $\proto{5}$
+  \end{itemize}
+}
+
+
+% ---
+\clearpage
+% ---
+
+\section{Zero Knowledge Proof}
+
+\metanote{Read and report the $\Sigma$ protocol.
+  Design the implementation and interactions between the classes.}
+
+Consider a finite group $(\GG,\circ)$ with generator $g$ and order $p$ prime.
+Observe that any element $x \in \GG$ has a unique coefficient $a \in \ZZ_p$ such that
+$\underbracket{g \circ \dots \circ g}_{a \text{ times}} = x$ briefly denoted $\circ^a g$ and that
+can be used to represent the scalar product of $a$ times of $g$.
+\Cref{fig:chaped} reports Chaum–Pedersen $\Sigma$-protocol~\cite{BOOK:Smart03} described in a generic
+finite group $(\GG,\circ)$ or order $p$ prime and with $g,h$ generators of $\GG$ and $y_1,y_2 \in \GG$.
+The protocol's goal is proving the knowledge of a coefficient $x$ such that
+$y_1 = \circ^x g$ and $y_2 = \circ^x h$.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{pchstack}
+    
+      \procedure{Prover's $\pcommit()$}{
+        r \sample \ZZ_p^*\\
+        (r_1,r_2) \gets (\circ^r g , \circ^r h)\\
+        \pcreturn (r_1,r_2)
+      }
+      \pchspace
+      \procedure{Verifier's $\pchal()$}{
+        c \sample \{0,1\}\\
+        \pcreturn c
+      }
+      \pchspace
+      \procedure{Prover's $\popen(\red{r},\red{x},c)$}{
+        s \gets r - c\cdot x\\
+        \pcreturn s
+      }
+      \pchspace
+      \procedure{$\pverify(y_1,y_2,r_1,r_2,c,s)$}{
+        r_1 \overset{?}{=} (\circ^s g) \circ (\circ^c y_1)\\
+        r_2 \overset{?}{=} (\circ^s h) \circ (\circ^c y_2)\\
+        \pcreturn 1 \text{ if checks pass}\\
+        \pcreturn 0 \text{ otherwise}
+      }
+    \end{pchstack}
+    \caption{Chaum–Pedersen $\Sigma$-protocol represented as pseudo-code.
+      In \red{red}, the prover's secret inputs.}\label{fig:chaped}
+\end{figure}
+
+Such an algorithm can be easily transformed into an authentication algorithm by noticing that
+the protocol instantiation, i.e. the publication of the values $(y_1,y_2) = (g^{x_1},h^{x_2})$
+with $x_1=x_2$, can be seen as the registration phase and the $\Sigma$-protocol as the authentication
+phase (\Cref{fig:auth}).
+
+\begin{figure}[!ht]
+  \centering
+  \input{tikz/auth}
+  \caption{1-factor authentication protocol.}\label{fig:auth}
+\end{figure}
+
+
+% ---
+
+\subsection{Implementation}
+
+The code is designed in several interconnected classes, as shown in \Cref{fig:authcode}, which can be
+described as:
+\begin{description}
+  \item[Finite Group] abstracts the group operations required by the $\Sigma$-protocol
+    and allows the implementations to the specific instances.
+  \item[ECC] represents an elliptic curve group, instance of finite group.
+  \item[$\ZZ_p$] represents a modulo group of order $p$, instance of finite group.
+  \item[CP $\Sigma$] implements Chaum-Pedersen $\Sigma$-protocol.
+  \item[User] represents the user functionalities and stores the secret input.
+  \item[Server] represents the server functionalities.
+  \item[Auth] implements the protocol by handling the user and server's communication.
+\end{description}
+
+
+\begin{figure}[!ht]
+  \centering
+  \input{tikz/authcode}
+  \caption{Abstract representation of the authentication proof of concept.}\label{fig:authcode}
+\end{figure}
+
+The code will showcase one protocol execution in detail and execute a larger amount of
+authentication and display the number of failing attempts.
+%
+To run the code, simply run (the Python package \textsf{tqdm} is required for the test
+  progression bar):
+\begin{lstlisting}[language=bash]
+  $ python code/auth/main.py
+\end{lstlisting}
+
+For the sake of the PoC, small groups are chosen and fixed.
+A note is left when using the implementation to highlight that the code is a PoC.
+Several limitations are:
+\begin{itemize}
+  \item There is no input sanitization, i.e. there are no checks nor errors, no handling
+    for wrong parameters or the sampled objects.
+    Forced \emph{always secure} intervals are used.
+  \item The elliptic curve implementation is general, simplistic and not efficient, i.e. during
+    instantiation the code finds a generator for the biggest prime subgroup in the manifold by
+    brute force and it does not easily support known curves.
+    
+\end{itemize}
+
+\probnote{
+  Further developments: 
+  \begin{itemize}
+    \item clean up the code and merge with an interface for effective communication
+    \item the elliptic curve code is a simplistic adaptation of the
+      \href{https://gist.github.com/bellbind/1414867/03b4b2dd79b41e65e51716076e5e2b0171628a10}
+      {publicly available code}
+    \item for real application, usage of side-channel--secure implementations for finite groups
+      is to be preferred and introduced
+    \item for real application, the registration phase is critical and it would improve to ask
+      an immediate authentication to verify the user indeed provided the correct inputs
+    \item for real application, the authentication can be transformed into a non-interactive
+      protocol via Fiat-Shamir transform (or similar)
+  \end{itemize}
+}
+
+% ---
+
+\bibliographystyle{alphaurl}
+\bibliography{biblio}
+
+\end{document} 

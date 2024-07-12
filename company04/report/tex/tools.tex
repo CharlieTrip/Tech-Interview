@@ -1,0 +1,81 @@
+% !TeX root = ../report.tex
+
+\section{Tools and }\label{sec:applications}
+
+\begin{center}
+	\itshape The list of tools you have used
+\end{center}
+
+As pointed out by the authors, the \PoSW\ primitive is one of many primitives in the
+timed cryptography domain which has some well-established applications classes.
+The applications that fully utilise the \PoSW\ primitive are presented.
+
+\vspace{2mm}
+\mindnote{
+	If $T$ implies a delay $\Delta$, effectively there are other interesting application which
+	not necessarily requires the verification step except if one wants to fast-forward between
+	sequential evaluations.
+	The applications are based on time-lock puzzles.
+	For example time-capsules and the ``encrypting for the future'' idea~\cite{EC:BDDNO21})
+	or turn-based consistent communication channel~\cite{PROVSEC:BLLMT21} (a-la blockchain).
+
+	The ``issue''	is that $\Delta$ time must be invested making it realistically prohibitive
+	to design complex feature around these ideas.
+	The alternative would be to have a trapdoor to quickly obtain $\vy$ which goes against
+	the \PoSW\ definition.
+	That is why I avoided presenting them too much.
+}
+
+
+
+\paragraph{Lotteries and MPC Fairness.}
+	Guaranteeing randomness to the randomly sampled is hard and important.
+	The main concern is that the random oracle is an ideal object while the hash/PRF are the closest
+	objects that we commonly agree to look/be pseudo-random.
+	When considering multi-party settings, it is of vital importance that any pseudo-random evaluation
+	to be verifiable to avoid a malicious actor to influence the output to his/her favour.
+	
+	If computing $\PoSW$ on some large $T$ has controlled computationally cost/timing $\Delta$
+	(one can somehow fix $T$ to identify a computational timing $\Delta$), then the primitive can be
+	used to run anything in the lottery class:
+	a conductor sets up a lottery where people can register before a pre-decided registration deadline.
+	When the deadline is over, the conductor must honestly sample a winner uniformly at random from the
+	registered people which can verify that the sampling was done correctly.
+	
+	This can be done by letting the conductor to set up a \PoSW, collect all the registration and use
+	such information as the input $x$ for the $\PoSW$.
+	Because of the primitive sequentiality and the full input being only effectively available only
+	at the deadline,
+	if $T$ is big enough to create an appropriate delay $\Delta$, the final winner is unknown to
+	everyone (conductor comprised) making the lottery fair.
+	Plus, the conductor must provide a proof $\pi$ which people can use to verify the correct winner's
+	sampling.
+
+	The class of lotteries contains many applications where the goal is to select an unpredictable
+	candidate from a list.
+	For example, one can use them for other type of consensus protocols, emulating the creation
+	of a common-reference-string, sampling randomness in multi-party computations.
+	
+
+
+\paragraph{Expiring Password/Secrets}
+	
+	This application wants to force a prover to expire a password/secret.
+	Consider a secret $\vx$ with a liveliness-budget of $T$.
+	The verifier, starting from a shared value $\vy[T]$ and $T$, requires the prover to slowly
+	consume its budget by an amount $t_i \leq T$ until $\vx$ is revealed.
+	
+	This is easy to achieve if the prover creates the challenge and never releases $\vx$.
+	When the verifier request to verify and consume $t_1$, the prover provides the proof
+	of correct $t_1$ evaluation from $\vy[T-t_1]$ until $\vy[T]$.
+	The next request on $t_2$ provides the proof from $\vy[T-t_1-t_2]$ until $\vy[T-t_1]$ and so on.
+	When $\sum t_i > T$, the prover should not be able to provide a proof forcing the prover to
+	output $\vx$ which expires the secret.
+	
+	This idea is similar to a multi-stage commitment scheme where the commitments are chained and
+	opened in sequence.
+	The effective gain is that there is an additional possibility to quickly open $t_i$ stages
+	with a reduced cost of $\log(t_i)$ for verifying the commitment.
+	
+	A possible application can use the secrets $\vy[i]$ for $i\in[0,T]$ which automatically gets
+	revealed when the budget is consumed.

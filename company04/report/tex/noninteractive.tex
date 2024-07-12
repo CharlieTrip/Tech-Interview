@@ -1,0 +1,224 @@
+% !TeX root = ../report.tex
+
+\section{Non-Interactive Transformation}
+
+\begin{center}
+	\itshape
+	Turn the protocol into a non-interactive proof system, and write the full specification.
+\end{center}
+
+
+To obtain a non-interactive proof system, I would suggest using the Fiat-Shamir (FS) transformation.
+In a nutshell, the prover substitutes requesting the verifier to sample and send a random challenge $c$
+with the output of a random oracle (RO) query on the current communication transcript.
+The key idea is that it is hard for the prover to predict the oracle's output thus
+forcing the prover to follow the protocol honestly since the verifier can re-compute the
+same values from the oracle too during verification.
+Additionally, the verifier is never queried thus obtaining the non-interactivity.
+
+\vspace{3mm}
+\mindnote{
+	I'm not sure if I will have the time later but I tried to (very) quickly check some
+	zero-knowledge papers (mainly \cite{EPRINT:AteFehKlo21}) to see if there is a ``safer'' way to
+	deal with this sort of ``dependent multi-round + parallel challenges'' but couldn't find
+	anything pointing to a better methodology.
+	
+	Therefore, I will go for the solution that \emph{feels} more secure!
+}
+
+\paragraph{Sketch Idea.}
+
+First, one must introduce a concrete instantiation for the RO.
+For the sake of simplicity, consider a cryptographic hash function $\hashf{}$ with codomain $S$
+which must be introduced during the instantiation of the public parameters $\pp$.
+
+The interactive protocol is split into the procedures for proving and verifying the evaluations
+which follows the protocol structure by reading/writing into a transcript $\transcript$ instead
+of receiving/sending messages to the other party.
+%
+As the name suggests, the transcript emulates the communication between the prover and verifier
+thus the prover can instantiate it with some initial description, e.g. the public parameters,
+challenge and result $\transcript[0] = \pp \concat \vA \concat \vx \concat \vy$.
+
+The prover starts executing $\prove(\vA,(\vx,\vy,\pprime,T), \witness)$ and each time
+it should send/receive a message, this is appended to $\transcript[i-1]$ to get $\transcript[i]$.
+In particular, the received messages are all randomly sampled elements $r_i$ which are computed
+by hashing the current transcript $r_i = \hashf{\transcript[i-1]}$.
+At the end of the emulated communication, the prover outputs the final transcript as the non-interactive
+proof $\proof = \transcript[t_1+t_2]$.
+
+The verifier received the proof $\pi$, starts from the same initial transcript $\transcript[0]$
+and sequentially reads the messages in the transcript.
+Since $T$ is known, the verifier knows which are the random elements thus it can verify the correct
+execution by recomputing and verifying the correct usage of all the $r_i = \hashf{\transcript[i-1]}$.
+
+\vspace{2mm}
+\mindnote{
+	Using a cryptographic hash function $\hashf{}$ as an instantiation of a random oracle
+	is sometimes arguable since it might not be the best choice for some applications.
+	
+	Maybe a \msf{PRF} and pushing the problem of getting a common random key/seed?
+	
+	I'm choosing to not go (for now) into the rabbit hole and find out the most correct type of function!
+}
+
+
+
+
+\subsection{Non-Interactive \PoSW\ Primitive}
+
+Let me report the protocol of \Cref{sec:prototype} and highlight in \blue{blue} the addition
+made to transform the primitive into a non-interactive one.
+%
+For the sake of readability, the algorithms $\eval,\gen$ are not reported since they
+are unaltered in the non-interactive version.
+%
+The algorithms are defined as follows:
+
+\begin{itemize}
+	\item $\init(\secpar) \to \pp$: initialise the public parameters $\pp$ containing 
+		the security parameter $\secpar$, the ring $\Rring$ of integers with a power-of-prime
+		$\poly[\secpar]$-th root of unity, values $\qprime$ and $\pprime$, dimensions $n$ and $m$,
+		\oran{subtractive set $S$}, \oran{expansion value $\gammaR$}
+		\blue{and secure hash function $\hashf{}$ (representing the random oracle)}.
+	
+	% \item $\gen(\pp) \to (\vA,\vx)$: generate and output the challenge by uniformly sampling
+	% 	$\vA \sample \Rring[q]^{n \times m}$ and $\vx \sample \Rring[q]^{n}$
+	
+	% \item $\eval(\vA,\vx,T) \to (\vy, \witness)$: for all $i \in [0,T-1]$ with $T > 0$ and
+	% 	$\vx[0] = \vx$, evaluate $\ffun{\vx[i]} = - \vA\vGi(\vx[i]) \pmod{q} = \vx[i+1]$
+	% 	and store the values $\vu[i] = -\vGi(\vx[i])$.
+	% 	Output the witness $\witness = (\vu[i])_{i=0}^{T-1}$ and evaluation result $\vy = \vx[T]$.
+	
+	\item \blue{$\prove(\vA,(\vx,\vy,\beta,T), \witness) \to \proof$}: the proving procedure is computed
+		recursively by calling the procedure
+		$\proveR(\vA,(\vx,\vy,\beta,T), \witness,\transcript)$
+		with starting transcript $\transcript = \pp\concat\vA\concat\vx\concat\vy\concat R$
+		where $R$ is a uniformly random bit-string.
+		The procedure is defined as follows:
+		\begin{itemize}
+			\item if $T = 1$:
+			\begin{itemize}
+				\item \blue{the procedure} \blue{appends} $\vu[0]$ \blue{to $\transcript$}
+				\item \blue{output the final transcript $\transcript$}
+			\end{itemize}
+			
+			\item if $T = 2 \cdot t$:
+			\begin{itemize}
+				\item \blue{the procedure} \blue{appends} $\vu[T-1]$ \blue{to $\transcript$ and obtains $\transcript^\prime$}
+				\item \blue{recursively} execute
+					$\blue{\proveR}(\vA,(\vx,- \vG \vu[T-1],\beta,T-1), (\vu[i])_{i=0}^{T-2}
+						\blue{,\transcript^\prime}  )$
+			\end{itemize}
+			
+			\item if $T = 2 \cdot t + 1 > 1$:
+			\begin{itemize}
+				\item \blue{the procedure} \blue{appends} $\vu[t]$ \blue{to $\transcript$ and
+					obtains $\transcript^\prime$}
+				\item \blue{the procedure computes} $r = \blue{\hashf{\transcript^\prime}}$ \blue{and
+					appends it to $\transcript^\prime$ and obtains $\transcript^{\prime\prime}$}
+				\item \blue{the procedure} computes:
+					\begin{itemize}
+						\item $\vx^\prime = \vx + \vA\cdot\vu[t]\cdot r \pmod{\qprime}$
+						\item $\vy^\prime = \vy\cdot r - \vG\cdot\vu[t] \pmod{\qprime}$
+						\item $\beta^\prime = 2 \cdot \gammaR \cdot \beta$
+						\item $\vu[i]^\prime = \vu[i] + r\cdot\vu[t+1+i]$ for $i \in [0,t-1] $
+					\end{itemize}
+					
+				\item \blue{recursively} execute
+					$\blue{\proveR}(\vA,(\vx^\prime,\vy^\prime,\beta^\prime,t), (\vu[i]^\prime)_{i=0}^{t-1},
+						\blue{\transcript^{\prime\prime}} )$
+			\end{itemize}
+		\end{itemize}
+		\blue{At the end of the recursive execution, the final transcript is the outputted
+		proof $\proof \gets \transcript$}.
+	
+	
+	
+	\item \blue{$\verify(\vA,(\vx,\vy,\beta,T),\proof) \to \{\valid,\fail\}$}:
+		the verifying procedure is computed
+		recursively by calling the procedure
+		$\verifyR(\vA,(\vx,\vy,\beta,T), \witness,\proof,\transcript)$
+		with starting transcript $\transcript = \pp\concat\vA\concat\vx\concat\vy\concat R$
+		where $R$ is a uniformly random bit-string.
+		For readability, reading from the proof \emph{consumes} the proof $\proof$
+		(similarly to an iterator) and
+		appends the content to the transcript $\transcript$ (and adds a $\prime$ in the notation, e.g.
+		from $\transcript \to \transcript^\prime \to \transcript^{\prime\prime}$).
+		The procedure is defined as follows:
+		\begin{itemize}
+			\item if $T = 1$:
+			\begin{itemize}
+				\item \blue{the procedure} \blue{reads} $\vu[0]$ \blue{from $\proof$}
+				\item \blue{the procedure} outputs $\ok$ if $\vu[0] \in \Rring[\beta]^{m}$,
+					$\vG \vu[0] = -\vx$ and $\vA \vu[0] = \vy$. Otherwise, outputs $\bad$.
+			\end{itemize}
+			
+			\item if $T = 2 \cdot t$:
+			\begin{itemize}
+				\item \blue{the procedure} \blue{reads} $\vu[T-1]$ \blue{from $\proof$}
+				\item \blue{the procedure} verifies that $\vu[T-1] \in \Rring[\beta]^{m}$,
+					and $\vA \vu[T-1] = \vy$.
+					If not, output \bad.
+				\item \blue{recursively} execute
+					$\blue{\verifyR}(\vA,(\vx,- \vG \vu[T-1],\beta,T-1), 
+						\blue{\proof,\transcript^\prime}  )$
+			\end{itemize}
+			
+			\item if $T = 2 \cdot t + 1 > 1$:
+			\begin{itemize}
+				\item \blue{the procedure} \blue{reads} $\vu[t]$ \blue{from $\proof$}
+				\item verify that $\vu[t] \in \Rring[\beta]^{m}$.
+					If not, \advV\ outputs \bad.
+				\item \blue{it computes} $r = \blue{\hashf{\transcript^\prime}}$ \blue{and
+					checks equality by reading $r$ from $\proof$.
+					If not, outputs $\bad$.}
+				\item \blue{the procedure} computes:
+					\begin{itemize}
+						\item $\vx^\prime = \vx+\vA\cdot\vu[t]\cdot r \pmod{q}$
+						\item $\vy^\prime = \vy\cdot r - \vG\cdot\vu[t] \pmod{q}$
+						\item $\beta^\prime = 2 \cdot \gammaR \cdot \beta$
+					\end{itemize}
+				\item \blue{recursively} execute
+					$\blue{\verifyR}(\vA,(\vx^\prime,\vy^\prime,\beta^\prime,t),
+						\blue{\proof,\transcript^{\prime\prime}} )$
+			\end{itemize}\
+		\end{itemize}
+		At the end of the \blue{recursive execution}, if the final output is $\ok$, return $\valid$.
+		Otherwise, return $\fail$.
+	
+\end{itemize}
+
+To guarantee correct soundness, the proving algorithm $\prove$ must be executed
+$\frac{\secpar}{\log(\secpar)}$ times implying the necessity of randomising the starting transcript
+because otherwise, since $(\pp,\vA,\vx,\vy,\witness)$ is fixed, without $R$
+the algorithm $\prove$ would be deterministic thus all the proof would be the same.
+%
+To avoid this, the random element $R$ is introduced in the transcript.
+
+
+
+\vspace{3mm}
+\mindnote{
+	Maybe the approach is somehow minimal and not that efficient
+	so here some additional thoughts!
+}
+
+The total proof length $\card{\proof}$ can be computed by summing all the communication costs
+presented in \Cref{sec:analysis:communication}
+since the transcript comprehends the instance $(\pp,\vA,\vx)$ (better digest),
+a random string $R$ and the prove-verifying communication.
+
+To improve the proof's size, the transcript can start with the random string $R$ plus the
+digest of the other elements, i.e.
+$\transcript[0] = R\;\concat\;\hashf[1]{\pp\concat\vA\concat\vx\concat\vy\concat R}$, where we introduce
+a different (collision-free) hash function $\hashf[1]{}$ with fixed-length binary output.
+This allows the compression of the starting transcript.
+
+Only the reported in the transcript witnesses $\vu[i]$ must be readable by the
+verification procedure to be used in the different computational verifications.
+All the other values (e.g. starting transcript and random values)
+are computed so they can be verified in a more compact format (i.e. checking a digest).
+%
+Nevertheless, how the transcript is defined can have security implications thus requiring additional care.
+

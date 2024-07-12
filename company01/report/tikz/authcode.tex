@@ -1,0 +1,46 @@
+% To allow compilation of the file
+% !TeX root = ./../reply.tex
+
+\begin{tikzpicture}
+  \draw (0,0) node [scale=1.0]{
+    \begin{tikzpicture}
+      [
+        txt/.style={sloped,font=\scriptsize,pos=.5},
+        txtv/.style={font=\scriptsize},
+        construction/.style={color=green,thick},
+        notion/.style={color=blue,thick},
+        impossible/.style={color=red, thick},
+        trivial/.style={color=black,thick,double},
+        conjecture/.style={color=orange,thick,decorate,decoration={snake,amplitude=1}},
+        related/.style={dashed,thick}
+      ]
+
+      \def\x{2};    
+      \def\y{1};    
+
+      \draw (0,\y*0.65) node (fg) {\TZrect{blue!10}{\x}{\y}{ECC}};
+      \draw (0,-\y*0.65) node (share) {\TZrect{blue!10}{\x}{\y}{$\ZZ_p$}};
+      
+      \draw (1.5*\x,\y*0) node (ss) {\TZrect{yellow!10}{\x}{1.5*\y}{Finite Group}};
+      
+      \draw (3*\x,\y*0) node (ideal) {\TZrect{green!10}{\x}{1.5*\y}{CP $\Sigma$}};
+      
+      \draw (4.5*\x,\y*0.65) node (user) {\TZrect{yellow!10}{\x}{\y}{User}};
+      \draw (4.5*\x,-\y*0.65) node (server) {\TZrect{yellow!10}{\x}{\y}{Server}};
+      
+      \draw (6*\x,\y*0) node (exp) {\TZrect{green!10}{\x}{1.5*\y}{Auth Proto}};
+      
+      \draw[-Stealth,trivial] (fg) to (ss);
+      \draw[-Stealth,trivial] (share) to (ss);
+      
+      \draw[-Stealth,trivial] (ss) to (ideal);
+      
+      \draw[Stealth-Stealth,trivial] (ideal) to (user);
+      \draw[Stealth-Stealth,trivial] (ideal) to (server);
+      
+      \draw[Stealth-Stealth,trivial] (user) to (exp);
+      \draw[Stealth-Stealth,trivial] (server) to (exp);
+      
+    \end{tikzpicture}
+  };
+\end{tikzpicture}

@@ -1,0 +1,119 @@
+% !TeX root = ../report.tex
+
+\section{Applications}\label{sec:applications}
+
+\begin{center}
+	\itshape Present one or two applications of the previous protocol and/or system.
+\end{center}
+
+The \PoSW\ primitive is one of many primitives in the
+timed cryptography domain which has some well-established application classes.
+The applications that utilise the \PoSW\ primitives are presented.
+
+\vspace{2mm}
+\mindnote{
+	\emph{Personal Note:}
+	if $T$ implies a delay $\Delta$, effectively there are other interesting application which
+	not necessarily requires the verification step except for fast-forwarding between
+	sequential evaluations.
+	
+	These applications are based on the idea of time-lock puzzles.
+	For example, one can construct time-capsules, i.e. the ``encrypting for the future''
+	idea~\cite{EC:BDDNO21}) or turn-based consistent communication channel~\cite{PROVSEC:BLLMT21}
+	(a-la blockchain).
+
+	The ``issue''	is that $\Delta$ time must be invested making the primitive realistically
+	prohibitive to use in several applications.
+	The ``alternative'' would be to have a trapdoor to quickly obtain $\vy$ which goes against
+	the \PoSW\ concept.
+	That is why I avoided presenting them, except for this personal note!
+}
+
+
+
+\paragraph{Lotteries and MPC Fairness.}
+Guaranteeing randomness to the randomly sampled is hard and important.
+The main concern is that the random oracle is an ideal object while the hash/PRF are the closest
+objects that we commonly agree to look/be pseudo-random.
+When considering multi-party settings, it is of vital importance that any pseudo-random evaluation
+is verifiable to prevent a malicious actor from influencing the output in their favour.
+
+If computing $\PoSW$ on some large $T$ has controlled computationally cost/timing $\Delta$
+(one can somehow fix $T$ to identify a computational timing $\Delta$), then the primitive can be
+used to run anything in the lottery class:
+a conductor sets up a lottery where people can register before a pre-decided registration deadline.
+When the deadline is over, the conductor must honestly sample a winner at random from the
+registered people which can verify that the sampling was done correctly.
+
+This can be done by letting the conductor set up a \PoSW, collect all the registration and use
+such information as the input $\vx$ for the $\PoSW$.
+Because of the primitive sequentiality and the full input being effectively available only
+at the deadline,
+if $T$ is big enough to create an appropriate computational delay $\Delta$, the final winner is
+unknown to everyone (conductor comprised) making the lottery fair.
+Plus, the conductor must provide a proof $\pi$ which people can use to verify the
+correct winner's sampling without investing $\Delta$ time.
+
+The class of lotteries contains many applications where the goal is to select an unpredictable
+candidate from a list.
+For example, one can use them for other type of consensus protocols, emulating the creation
+of a common-reference-string, sampling randomness in multi-party computations.
+	
+
+
+\paragraph{Expiring Password/Secrets}
+	
+This application wants to force a prover to expire a password/secret.
+Consider a shared secret, between a prover and verifier, $\vx$ with a liveliness-budget of $T$.
+The verifier, starting from a secretly shared value $\vy[T]$ and $T$, requires the prover to slowly
+consume its budget by an amount $t_i \leq T$ until $\vx$ is revealed.
+%
+This is easy to achieve if the prover creates the challenge and never releases $\vx$.
+When the verifier requests to verify and consume $t_1$, the prover provides the proof
+of correct $t_1$ evaluation from $\vy[T-t_1]$ until $\vy[T]$.
+The next request on $t_2$ provides the proof from $\vy[T-t_1-t_2]$ until $\vy[T-t_1]$ and so on.
+When $\sum t_i > T$, the prover should not be able to provide additional proofs forcing the
+prover to output $\vx$ which expires the secret.
+
+This idea is similar to a multi-stage commitment scheme where the commitments are chained and
+opened in sequence.
+The effective gain is that there is an additional possibility to quickly open $t_i$ stages
+with a reduced cost for verifying the commitment.
+
+
+\vspace{3mm}
+A possible application would use the secrets $\vy[i]$ for $i\in[0,T]$ until the verifier
+requests to consume the budget.
+Since both parties have the secrets $\vx$ and $T$, they both can compute $\witness$ and $\vy[T]$.
+Let's assume that the challenge $(\vA,\vx,T)$ is provided by the verifier to the prover
+and they use $\vy[T]$ as a shared secret.
+
+At any moment, the verifier \advV\ might get suspicious that the prover \advP\ got hacked and
+lost control of the shared secret $\vy[T]$ and maybe some other intermediate value from the witness.
+For this reason, \advV\ requests to consume $t$ evaluation to verify if \advP\ has enough
+partial evaluations or not.
+Both parties execute the verification of correct evaluation from $\vy[T-t]$ until $\vy[T]$.
+If \valid, \advV\ is reassured that \advP\ has (at least) $t$ pre-images of the one-way
+evaluation $\ffun{}$.
+
+From now onwards, they will use $\vy[T-t-1]$ as a shared secret, allowing the repetition of the 
+consume-request until all $T$ evaluations are consumed.
+At that point, the prover is unable to provide verifying proof forcing both to lose any shared
+secret between themselves.
+Observe that \advV\ can quickly verify if \advP\ has the same shared secret, e.g. any symmetrically 
+encrypted fixed message with a derivate key from the shared secret would work.
+
+
+As an added feature, executing the budget-consume query will fully expose the last shared secret
+which can be useful to execute a verification of some exchanged message, i.e. messages are
+exchanged and have a \msf{MAC} computed from the secret key derived from the shared secret.
+By revealing the shared secret, anyone can verify the messages' correctness.
+
+
+
+\vspace{2mm}
+\mindnote{
+	I hope the description is clear.
+	I think I never encountered such an application but feels somehow useful or, at least,
+	something that can have an interesting real application!
+}

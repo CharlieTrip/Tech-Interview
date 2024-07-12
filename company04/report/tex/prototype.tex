@@ -1,0 +1,235 @@
+% !TeX root = ../report.tex
+
+\section{Protocol and Prototype}\label{sec:prototype}
+
+\begin{center}
+\itshape
+	Fully specify the resulting protocol and prototype it with your favourite programming language/tool.
+\end{center}
+
+\paragraph{Quick Notation.}
+Uniform sampling is denoted as $x \sample X$.
+Let $\Rring$ a ring of integer of a cyclotomic field and $f$ denotes the degree of the extension
+(instead of $\phi$ used in the paper), vectors $\vec{a}$ have bold typesetting
+and matrices $\vec{A}$ are uppercase.
+For $\qprime \in \NN$, let $\Rring[\qprime] = \Rring/q\Rring$ and $\Rring^\times$ denote the
+set of units of $\Rring$.
+A set $S \subset \Rring$ is subtractive if $\forall\,{a,b \in \Rring}$ with $a \neq b$, it holds
+$(a-b) \in \Rring^{\times}$.
+The inverse gadget matrix $\vGi(\vx)$ returns the vector obtained by appending each $p$-ary representation
+for each entry of $\vx$, i.e. for $l$ such that $q < p^l$, $x = \sum_{j=0}^{l} x_{j} p^j$ and all
+$x_j < p$.
+Define the gadget matrix as $\vG = I_{n} \otimes \begin{pmatrix} 1 & p & \cdots & p^l\end{pmatrix}$
+which, briefly, takes a $p$-ary representation and returns the original value.
+
+\vspace{2mm}
+\mindnote{
+	I highlighted in \oran{orange} two objects that were somehow not present in the protocol's description.
+	However, without them, the protocol would be ill-defined/weird or unusable, mainly because either
+	the value might be hard to compute or prover--verifier might not agree on the same set.\\
+	I highlighted in \red{red} a typo present in the eprint version of the paper~\cite{EPRINT:LaiMal24}.
+	I'm unable to get the published version to check if the typo is present there too.
+}
+
+
+
+\subsection{Lai--Malavolta \PoSW\ Protocol}
+
+The whole \PoSW's protocol is defined as:
+
+\begin{enumerate}
+	\item initialise the public parameters $\pp \gets \init(\secpar)$
+	\item generate the challenge $(\vA,\vx) \gets \gen(\pp)$
+	\item provide the challenge to the prover $\advP$ which executes $\eval(\vA,\vx,T)$ for
+		some amount $T$, stores the witness $\witness$ and outputs $\vy$
+	\item execute $\frac{\lambda}{\log{\lambda}}$ times the verification protocol with inputs
+		$\prove(\vA,(\vx,\vy,\pprime,T),\witness)$ and $\verify(\vA,(\vx,\vy,\pprime,T)$
+	\item if the protocol never outputs $\bad$,
+		the verification protocol outputs $\valid$.
+		Otherwise, it outputs $\fail$.
+\end{enumerate}
+
+\noindent
+Let me expand on the different algorithms and how they are defined.
+
+\subsection{Construction Definition}
+The primitive is defined with the following algorithms $\init, \gen, \eval$ plus an interactive
+protocol between a prover and a verifier.
+%
+The algorithms are defined as follows:
+\begin{itemize}
+	\item $\init(\secpar) \to \pp$: initialise the public parameters $\pp$ containing 
+		the security parameter $\secpar$, the ring $\Rring$ of integers with a power-of-prime
+		$\poly[\secpar]$-th root of unity, values $q$ and $p$, dimensions $n$ and $m$,
+		\oran{subtractive set $S$}, \oran{expansion value $\gammaR$}%
+		% and one-way function $\hashf{}$ (representing the random oracle)
+		.
+	
+	\item $\gen(\pp) \to (\vA,\vx)$: generate the challenge by uniformly sampling
+		$\vA \sample \Rring[q]^{n \times m}$ and $\vx \sample \Rring[q]^{n}$
+	
+	\item $\eval(\vA,\vx,T) \to (\vy, \witness)$: for all $i \in [0,T-1]$ with $T > 0$ and
+		$\vx[0] = \vx$, evaluate the function $\ffun{\vx[i]} = - \vA\vGi(\vx[i]) \pmod{q} = \vx[i+1]$
+		and store the values $\vu[i] = -\vGi(\vx[i])$.
+		Output the witness $\witness = (\vu[i])_{i=0}^{T-1}$ and evaluation result $\vy = \vx[T]$.
+\end{itemize}
+
+The prover $\advP$ and verifier $\advV$ are involved into a recursive-like interactive protocol
+which can be defined using $\prove,\verify$ for the prover and verifier's inputs respectively.
+Consider $\prove(\vA,(\vx,\vy,\beta,T), \witness)$ and $\verify(\vA,(\vx,\vy,\beta,T))$ where the
+public parameters $\pp$ are implicitly input to both the parties.
+
+\begin{itemize}
+	\item if $T = 1$:
+	\begin{itemize}
+		\item $\advP$ sends $\vu[0]$ to $\advV$
+		\item $\advV$ receives $\vu[0]$
+		\item $\advV$ outputs $\ok$ if
+		\[
+			\vu[0] \in \Rring[\beta]^{m} \;\;\bigwedge\;\; \vG \vu[0] = -\vx ;\;\bigwedge\;\; \vA \vu[0] = \vy
+		\]
+			Otherwise, outputs $\bad$.
+	\end{itemize}
+	
+	\item if $T = 2 \cdot t$:
+	\begin{itemize}
+		\item $\advP$ sends $\vu[T-1]$ to $\advV$
+		\item $\advV$ receives $\vu[T-1]$
+		\item verify that
+			\[ \vu[T-1] \in \Rring[\beta]^{m} ;\;\bigwedge\;\; \vA \vu[T-1] = \vy\]
+			If not, \advV\ outputs \bad.
+		\item Repeat with
+			\[
+				\prove(\vA,(\vx,- \vG \vu[T-1],\beta,T-1), (\vu[i])_{i=0}^{T-2})
+				\qquad \verify(\vA,(\vx,- \vG \vu[T-1],\beta,T-1))
+			\]
+	\end{itemize}
+	
+	\item if $T = 2 \cdot t + 1 > 1$:
+	\begin{itemize}
+		\item $\advP$ sends $\vu[t]$ to $\advV$
+		\item $\advV$ receives $\vu[t]$
+		\item verify that $\vu[t] \in \Rring[\beta]^{m}$.
+			If not, \advV\ outputs \bad.
+		\item $\advV$ samples $r \sample S$ and sends it to $\advP$
+		\item both computes:
+			\begin{itemize}
+				\item $\vx^\prime = \red{+}\; \vx \;\red{+}\; \vA\cdot\vu[t]\cdot r \pmod{q}$
+				\item $\vy^\prime = \vy\cdot r - \vG\cdot\vu[t] \pmod{q}$
+				\item $\beta^\prime = 2 \cdot \gammaR \cdot \beta$
+			\end{itemize}
+		\item $\advP$ computes:
+			\begin{itemize}
+				\item $\vu[i]^\prime = \vu[i] + r \cdot \vu[t+1+i]$ for $i \in [0,t-1] $
+			\end{itemize}
+			
+		\item Repeat with
+			\[
+				\prove(\vA,(\vx^\prime,\vy^\prime,\beta^\prime,t), (\vu[i]^\prime)_{i=0}^{t-1})
+				\qquad
+				\verify(\vA,(\vx^\prime,\vy^\prime,\beta^\prime,t))
+			\]
+	\end{itemize}
+	
+\end{itemize}
+
+\vspace{5mm}
+
+\paragraph{Typo in the Paper.}
+Previously highlighted in \red{red} a fixed typo from the paper.
+%
+Consider the scenario $ T= 2\cdot t+1$, the paper states
+$\vx^\prime = \red{-}\vx\red{-}\vA\cdot\vu[t]\cdot r \pmod{q}$.
+To see why this is a typo, consider $T=3$.
+
+After the first round of communication, the prover would compute $\vx^\prime = -\vx- r \vx[2]$,
+$T^\prime=1$ and $\witness[0] = \vu[0] + r\vu[2]$.
+At the next execution, the verifier $\advV$ would compute,
+\[\vG\witness[0] = \vG \vu[0] + r \vu[2] =
+\vG ( - \vGi(\vx)) + r \vG ( - \vGi(\vx[2]))= - \vx - r \vx[2] \neq -\vx^\prime = \vx + \vx[2]\] 
+which would produce a failing verification.
+
+
+
+\clearpage
+\subsection{Prototype}
+
+I wrote the prototype in \msf{Python} which code can be found in the \texttt{code/} folder.
+
+\paragraph{Assumptions, Observations and Limitations.}
+\begin{itemize}
+	\item For the sake of simplicity, I wrote the prototype assuming the usage of the integers
+		as the ring $\Rring = \ZZ$ meaning that $\gammaR = 1$ and $S = \{a,a+1\}$ for any $a \in \ZZ$.
+		%
+		However, the code-class of the ring $\Rring$ is abstracted (enough) to allow a
+		future plug-and-play usage of a more appropriate ring.
+		
+	\item When transforming into $\pprime$-ary representation, $\vx$ must be converted
+		back into the range $[0,q)$.
+	
+	\item I fixed $m = n*l$ despite the paper suggesting the possibility of using different values.
+	
+	\item I developed the construction as defined (i.e. vertical vectors) despite this produces
+		several matrix-transpositions calls in the code which affect memory and efficiency.
+\end{itemize}
+
+
+\paragraph{Run the Code!}
+To execute the code, one can run:
+\begin{lstlisting}[language=Bash]
+# Default Values
+
+python main.py 
+\end{lstlisting}
+with (arbitrary) default values:
+\[ (\pprime,\qprime,\;\;a,n,\;\;T,\secpar\;\;,f,m,\;\;\msf{tests}) =
+	(19,101,\;\;0,10\;\;,100,1,\;\;1,1,\;\;100) \]
+
+Otherwise, the script allows modifying the parameters using the interface,
+
+\begin{lstlisting}[language=Bash]
+usage: main.py [-h] [--p P] [--q Q] [--a A] [--n N] [--T T] [--secpar SECPAR]
+               [--f F] [--m M] [--tests TESTS]
+
+PoSW Prototype using ZZ
+
+optional arguments:
+  -h, --help       show this help message and exit
+  --p P            Base of the p-ary representation
+  --q Q            Modulus of R_q
+  --a A            Used to create the subtractive list
+  --n N            Dimension of the PoSW
+  --T T            Amount of sequential computations
+  --secpar SECPAR  Security parameter (not used)
+  --f F            f-th root of unity (order) (not used)
+  --m M            Dimension of the PoSW (not used)
+  --tests TESTS    Description for tests
+\end{lstlisting}
+
+The code outputs the passing rate, i.e. number of correct prove-verification executions,
+and some statistical values for both the evaluation $\evaluate$ and prove-verify $\prove+\verify$
+timing.
+%
+For example, with the default values,
+\begin{lstlisting}[language=Bash]
+Passing Rate: 1.0
+
+>>  Evaluation Time (ms)
+Mean: 			10.981431007385254
+Variance: 	0.0456968080243314
+St. Dev: 		0.21376811741775573
+Median: 		10.909080505371094
+
+>>  Proving Time (ms)
+Mean: 			3.5293102264404297
+Variance: 	0.004362462959761615
+St. Dev: 		0.06604894366877956
+Median: 		3.5108327865600586
+\end{lstlisting}
+
+\vspace{2mm}
+\mindnote{
+	Observe: the proving time is smaller than the evaluation time, even for other parameters.\\
+	This is coherent with \PoSW's goal!
+}
+

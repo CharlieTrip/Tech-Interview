@@ -1,0 +1,253 @@
+% To allow compilation of the file
+% !TeX root = ./reply.tex
+
+
+\newcommand{\proto}[1]{\ensuremath{\pi_{#1}}}
+\newcommand{\Fabb}{\ensuremath{\mathcal{F}_{\textsf{ABB}}}}
+\newcommand{\Fexp}{\ensuremath{\mathcal{F}_{\pexp}}}
+\newcommand{\shares}[1]{\ensuremath{\left[{#1}\right]}}
+\newcommand{\pexp}{\ensuremath{\sffont{exp}}}
+
+\newcommand{\pshare}{\ensuremath{\sffont{Share}}}
+\newcommand{\psrand}{\ensuremath{\sffont{sRand}}}
+\newcommand{\pproduct}{\ensuremath{\sffont{Product}}}
+\newcommand{\popen}{\ensuremath{\sffont{Open}}}
+\newcommand{\pcommit}{\ensuremath{\sffont{Commit}}}
+\newcommand{\pchal}{\ensuremath{\sffont{Challenge}}}
+\newcommand{\pverify}{\ensuremath{\sffont{Verify}}}
+\newcommand{\pinit}{\ensuremath{\sffont{Init}}}
+
+
+\newcommand{\sffont}[1]{\ensuremath{\textsf{#1}}}
+
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\oran}[1]{\textcolor{orange}{#1}}
+\newcommand{\gray}[1]{\textcolor{gray}{#1}}
+
+
+\newcommand{\ok}{\sffont{\;ok!}}
+\newcommand{\nok}{\sffont{\;not ok!}}
+\newcommand{\bad}{\sffont{\;bad}}
+
+\newcommand{\strat}[1]{\ensuremath{\sffont{S}_{#1}}}
+
+\newcommand{\SF}{\sffont{SF}}
+\newcommand{\PKE}{\sffont{PKE}}
+
+\newcommand{\IND}{\sffont{IND}}
+\newcommand{\SIND}{\sffont{$\Sigma$}\IND}
+\newcommand{\DIND}{\sffont{D}\IND}
+
+\newcommand{\LOR}{\sffont{LOR}}
+\newcommand{\AND}{\sffont{AND}}
+\newcommand{\KR}{\sffont{KR}}
+\newcommand{\UKU}{\sffont{UKU}}
+\newcommand{\ROR}{\sffont{ROR}}
+
+\newcommand{\CXA}{\sffont{CXA}}
+\newcommand{\CPA}{\sffont{CPA}}
+\newcommand{\CCA}{\sffont{CCA}}
+
+\newcommand{\eH}{\sffont{H}}
+\newcommand{\gW}{\sffont{W}}
+\newcommand{\pgW}[1]{\ensuremath{{\omega}_{#1}}}
+
+
+\newcommand{\ent}[1]{\ensuremath{\mathsf{H}\left({#1}\right)}}
+\newcommand{\cent}[2]{\ensuremath{\mathsf{H}\left({#1}\middle\lvert{#2}\right)}}
+\newcommand{\dent}[1]{\ensuremath{\mathsf{h}\left({#1}\right)}}
+\newcommand{\cdent}[2]{\ensuremath{\mathsf{h}\left({#1}\middle\lvert{#2}\right)}}
+
+\newcommand{\mutinf}[2]{\ensuremath{\mathsf{I}\left({#1}\;;\;{#2}\right)}}
+\newcommand{\mch}[2]{
+\left.\mathchoice
+  {\left(\kern-0.48em\binom{#1}{#2}\kern-0.48em\right)}
+  {\big(\kern-0.30em\binom{\smash{#1}}{\smash{#2}}\kern-0.30em\big)}
+  {\left(\kern-0.30em\binom{\smash{#1}}{\smash{#2}}\kern-0.30em\right)}
+  {\left(\kern-0.30em\binom{\smash{#1}}{\smash{#2}}\kern-0.30em\right)}
+\right.}
+
+%
+% Random Math Notation / Functions
+%
+
+\newcommand{\range}{\ensuremath{\textrm{Rg}}}
+\renewcommand*{\argmin}{\ensuremath{\text{arg\,min}}}
+\newcommand{\pr}[1]{\ensuremath{\mathsf{Pr}\left[{#1}\right]}}
+\newcommand{\cpr}[2]{\ensuremath{\mathsf{Pr}\left[{#1}\mid{#2}\right]}}
+\newcommand{\complexity}{\ensuremath{\mathcal{O}}}
+\newcommand{\pprime}{\ensuremath{p}}
+\newcommand{\definput}{\ensuremath{x}}
+\newcommand{\defoutput}{\ensuremath{y}}
+\newcommand{\mean}[1]{\ensuremath{\mathbb{E}\left[{#1}\right]}}
+\newcommand{\var}[1]{\ensuremath{\mathsf{Var}\left[{#1}\right]}}
+\newcommand{\stirling}[2]{\ensuremath{\genfrac{\{}{\}}{0pt}{}{#1}{#2}}}
+\newcommand{\factn}[2]{\ensuremath{\left({#1}\right)_{#2}}}
+
+
+%
+% Any kind of Key
+%
+
+% Standard
+% \newcommand{\pk}{\ensuremath{\textsf{pk}}}
+% \newcommand{\sk}{\ensuremath{\textsf{sk}}}
+% \newcommand{\vk}{\ensuremath{\textsf{vk}}}
+\newcommand{\ek}{\ensuremath{\textsf{ek}}}
+\newcommand{\gsk}{\ensuremath{\textsf{g}\sk}}
+
+% Master
+\newcommand{\mvk}{\ensuremath{\textsf{m}\vk}}
+\newcommand{\msk}{\ensuremath{\textsf{m}\sk}}
+\newcommand{\mpk}{\ensuremath{\textsf{m}\pk}}
+
+% Generics
+\newcommand{\tamp}[1]{\ensuremath{{#1}^\star}}
+\newcommand{\tomp}[1]{\ensuremath{{#1}_\star}}
+\newcommand{\msg}{\ensuremath{\textsf{m}}}
+\newcommand{\msgg}{\ensuremath{\textsf{m}^\prime}}
+
+
+
+\newcommand{\setup}{\ensuremath{\textsf{Setup}}}
+\newcommand{\init}{\ensuremath{\textsf{Init}}}
+\newcommand{\keygen}{\ensuremath{\textsf{KGen}}}
+\newcommand{\compute}{\ensuremath{\textsf{Compute}}}
+\newcommand{\evaluate}{\ensuremath{\textsf{Eval}}}
+\newcommand{\Poly}{\ensuremath{\textsf{Poly}}}
+
+
+\newcommand{\Enc}{\ensuremath{\textsf{Enc}}}
+\newcommand{\Dec}{\ensuremath{\textsf{Dec}}}
+
+\renewcommand\adversary[1]{\ensuremath{\mathcal{#1}}}
+\newcommand{\oracle}{\ensuremath{\textsf{O}}}
+\newcommand\oracleN[1]{\ensuremath{{\oracle}_{\textsf{#1}}}}
+
+\newcommand{\simul}{\ensuremath{\mathcal{S}}}
+\newcommand{\experiment}[3]{\ensuremath{\textsf{Exp}^{#1}_{#2}(#3)}}
+\renewcommand{\advantage}[3]{\ensuremath{\textsf{Adv}^{#1}_{#2}(#3)}}
+
+\newcommand{\advA}{\adversary{A}}
+\newcommand{\advB}{\adversary{B}}
+\newcommand{\advC}{\adversary{C}}
+\newcommand{\advR}{\adversary{R}}
+
+
+%
+% Any kind of party
+%
+
+\newcommand{\party}[1]{\ensuremath{\mathcal{#1}}}
+\newcommand{\client}{\party{U}}
+\newcommand{\server}{\party{S}}
+\newcommand{\third}{\party{T}}
+
+
+%
+% Any knd of GameName / SecModel
+%
+
+\newcommand{\unf}{\ensuremath{\textsf{UNF}}}
+\newcommand{\staticunf}{\ensuremath{\unf}}
+
+\newcommand{\Mspace}{\ensuremath{\mathcal{M}}}
+\newcommand{\Cspace}{\ensuremath{\mathcal{C}}}
+\newcommand{\Kspace}{\ensuremath{\mathcal{K}}}
+\newcommand{\Lspace}{\ensuremath{\mathcal{L}}}
+\newcommand{\LspaceN}[1]{\ensuremath{\Lspace_{#1}}}
+
+\newcommand{\Xspace}{\ensuremath{\mathcal{X}}}
+\newcommand{\Yspace}{\ensuremath{\mathcal{Y}}}
+
+\newcommand{\ghash}{\ensuremath{\overline{G}}}
+\newcommand{\dhash}{\ensuremath{\overline{\hash}}}
+\newcommand{\khash}[1]{\ensuremath{{F}_{#1}}}
+
+
+
+%
+% Group
+%
+
+\newcommand{\geng}{\ensuremath{g}}
+\newcommand{\gengn}[1]{\ensuremath{g_{#1}}}
+\newcommand{\emapempty}{\ensuremath{\emap{\gengn{1}}{\gengn{2}}}}
+
+
+% Any other useful command
+
+\newcommand\randomin[1]{\ensuremath{\sample {#1} }}
+\newcommand\valuein{\ensuremath{\in}}
+\newcommand\bitstring[1]{\ensuremath{{\{0,1\}}^{{#1}} }}
+
+\newcommand\lpnorm[2]{\ensuremath{\left\lVert #2 \right\rVert_{#1}}}
+\newcommand\closint[1]{\ensuremath{\left\lfloor #1 \right\rceil}}
+
+\newcommand{\card}[1]{\ensuremath{\left\lvert #1 \right\rvert}}
+
+\newcommand{\qedb}{\hfill\ensuremath{\blacksquare}}
+
+\makeatletter
+\newcommand{\tpmod}[1]{\mkern 3mu({\operator@font mod}\mkern 6mu#1)}
+\makeatother
+
+
+\newcommand{\ie}{\emph{i.e.}}
+\newcommand{\eg}{\emph{e.g.}}
+\newcommand{\Lwlog}{\textit{w.l.o.g.}}
+\newcommand{\wrt}{\textit{w.r.t.}}
+\newcommand{\etal}{\emph{et al.}} 
+
+
+
+\newcommand{\tikzmark}[2]{\tikz[overlay,remember picture,baseline=(#1.base)] \node (#1) {#2};}
+%
+\newcommand{\Highlight}[4][submatrix]{%
+    \tikz[overlay,remember picture]{
+    \node[rectangle,rounded corners,draw,fill opacity=0.2,inner sep=0pt,
+    	fill=#2,fit=(#3.north west) (#4.south east)] (#1) {};}
+}
+
+
+
+
+% Math Environment
+
+\newtheorem{theorem}{Thm.}{}
+\newtheorem{definition}{Def.}{}
+\newtheorem{proposition}{Prop.}{}
+\newtheorem{corollary}{Cor.}{}
+\newtheorem{lemma}{Lemma}{}
+\newtheorem{claim}{Claim}{}
+\newtheorem{remark}{Rem.}{}
+\newtheorem{problem}{Prob.}{}
+
+\theoremstyle{remark}
+\newtheorem*{sketch}{Sketch}{}
+
+\Crefname{theorem}{Thm.}{Thms.}
+\Crefname{definition}{Def.}{Defs.}
+\Crefname{proposition}{Prop.}{Props.}
+\Crefname{corollary}{Cor.}{Cors.}
+\Crefname{figure}{Fig.}{Figs.}
+
+
+% Random Macros
+
+\makeatletter
+\renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
+  \hskip -\arraycolsep
+  \let\@ifnextchar\new@ifnextchar
+  \array{#1}}
+\makeatother
+
+
+% TikZ
+
+\newcommand{\TZrect}[4]{
+  \begin{tikzpicture}
+    \draw [thick,draw=black, fill=#1, rounded corners] (0,0) rectangle  ++ (#2,#3)
+      node[text width=18mm,pos=.5,scale=0.9,align=center] {\textbf{{#4}}};
+  \end{tikzpicture}}

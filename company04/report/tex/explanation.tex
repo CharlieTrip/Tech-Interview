@@ -1,0 +1,164 @@
+% !TeX root = ../report.tex
+
+\section{Lai--Malavolta's Construction}\label{sec:construction}
+
+\begin{center}
+\itshape
+Present in a high-level way the construction given in \cite{EPRINT:LaiMal24}.
+		Explain the intuition behind it.
+\end{center}
+
+Lai--Malavolta~\cite{EPRINT:LaiMal24,C:LaiMal23} provide the instantiation of a Proof of
+Sequential Work (\PoSW) which allows a prover to prove to a verifier that $\vy$ is obtained from the
+correct computation of a function $\ffun[T]{}$ on input $\vx$ and that the computation requires
+$T$ sequential computation of $\ffun{}$, in other words:
+\[\ffun[T]{\vx} = \underbrace{\ffun{\ffun{\cdots \ffun{\vx}}}}_{T \text{ times}} = \vy\]
+
+The main concept of such a primitive is that to obtain $\vy$ there is no ``faster way'' other
+than computing $\ffun[T]{}$ thus implying the necessity to \emph{work} for an amount of time
+dependent on computing $T$ times a function \emph{sequentially}.
+%
+Obviously, the verifier should be able to verify the correct computation in a faster than $T$
+sequential computation with the help of the prover.
+
+
+The primitive is a combination of two fundamental concepts: 
+\begin{enumerate*}[label=\emph{(\roman*)}]
+	\item the sequential computation can be \emph{described as a linear system}
+		(despite not being linear) where the solution can only be obtained by executing $\ffun[T]{}$;
+	\item the linear system is \emph{self-similar} (like a fractal) thus one can release
+		a central solution and ``fold/aggregate'' the remaining solutions into the solution of a
+		smaller problem with half the size.
+\end{enumerate*}
+
+
+\paragraph{Sequentiality as Linear System.}
+The function $\ffun{}$ is in itself the composition of a linear map $\vA$ and a non-linear
+component $\vGi$, i.e. $\ffun{\vx} = - \vA \circ \vGi(\vx)$, with two notable properties:
+\begin{itemize}
+	\item $\ffun{}$ is a collision-resistant hash function which motivates all the security arguments;
+	\item $\vG$ has a linear representation.
+\end{itemize}
+%
+This second property allows considering the partial evaluations $\vu[0] = -\vGi(\vx)$
+($\vG(\vu[0]) = \vx$), $\vA(\vu[0]) = \vy[1]$ which can be comfortably described into a linear system.
+For example, $\ffun[2]{\vx} = \ffun{\ffun{\vx}} = \ffun{\vy[1]} = \vy[2]$ can be described as the 
+linear systems which can be combined into a single one:
+\[
+	\begin{pmatrix}
+		\vG \\ \vA 
+	\end{pmatrix}
+	\cdot
+	\begin{pmatrix}
+		\vu[0] 
+	\end{pmatrix}
+	= 
+	\begin{pmatrix}
+		-\vx \\ \vy[1]
+	\end{pmatrix}
+	\text{ and }
+		\begin{pmatrix}
+		\vG \\ \vA 
+	\end{pmatrix}
+	\cdot
+	\begin{pmatrix}
+		\vu[1] 
+	\end{pmatrix}
+	= 
+	\begin{pmatrix}
+		-\vy[1] \\ \vy[2]
+	\end{pmatrix}
+	%
+	\Longrightarrow
+	%
+	\begin{pmatrix}
+		\vG & \\ \vA & \vG \\ & \vA
+	\end{pmatrix}
+	\cdot
+	\begin{pmatrix}
+		\vu[0] \\ \vu[1]
+	\end{pmatrix}
+	= 
+	\begin{pmatrix}
+		-\vx \\ \vy[1] - \vy[1] \\  \vy[2]
+	\end{pmatrix}
+	=
+	\begin{pmatrix}
+		-\vx \\ 0 \\  \vy[2]
+	\end{pmatrix}
+\]
+%
+Clearly, this trick can be extended to any amount $T$ of evaluations since only $\vG,\vA,\vx,\vy[T]$
+are required to define the whole sequential evaluation which is described as a linear system where
+the partial evaluations $(\vu[i])_{0}^{T-1}$ are known only to who (honestly) computes $\ffun[T]{\vx}$.
+
+
+
+
+\paragraph{Folding the Linear System.}
+The next step is allowing an honest prover with the partial evaluations
+$(\vu[i])_{0}^{T-1}$ to provide proof to a verifier and this is done via a protocol that
+proves the knowledge of the solution of the linear system defining the evaluation
+$\ffun[T]{\vx}= \vy[T]$.
+
+The trick used reassembles the act of (vertically) ``folding'' the matrix in half and noticing that
+the linear system can be split into two smaller ones with the same linear mapping $\vA[t]$, for example,
+\[
+	\left(
+		\begin{array}{cc|c|cc}
+			\vG  & & & & \\
+			\vA & \vG  & & & \\
+			 & \vA & \vG  & & \\
+			 \hline
+			 & & \vA & \vG  & \\
+			 & & & \vA & \vG  \\
+			 & & & & \vA
+		\end{array}
+	\right)
+	\begin{pmatrix}
+	 \vu[0] \\ \vu[1] \\ \vu[2] \\ \vu[3] \\ \vu[4]
+	\end{pmatrix}
+	=
+	\left(
+		\begin{array}{c|c|c}
+			\vA[t] & \vG  &  \\
+			 \hline
+			 & \vA & \vA[t]
+		\end{array}
+	\right)
+	\begin{pmatrix}
+	 \vu[0] \\ \vu[1] \\ \vu[2] \\ \vu[3] \\ \vu[4]
+	\end{pmatrix}
+	= 
+	\begin{pmatrix}
+	 - \vx\\ 0 \\ 0 \\ 0 \\ \vy[4]
+	\end{pmatrix}
+\]
+
+If the prover provides the (central) value $\vu[2]$, the remaining solutions relates to the same
+linear system $\vA[t]$.
+By allowing the verifier to provide a random element $r$, the prover aggregates the solutions into one,
+\[ \vA[t] \cdot
+	\begin{pmatrix}
+	 \vu[0] + r \cdot \vu[3] \\ \vu[1] + r \cdot \vu[4]
+	\end{pmatrix}
+	=
+	\begin{pmatrix}
+	 - \vx[0] - \vA(\vu[2]) \\ \vy[4] - \vG(\vu[2])
+	\end{pmatrix}\]
+
+In $\log(T)$ steps, the prover is left to share the final value $\vu$ obtained by all the folded
+coefficients $r$s.
+
+
+
+
+\vspace{3mm}
+\mindnote{
+	\emph{Personal Notes:}
+	the concepts underlying the construction are a mix of a paper of mine
+	(\cite{ISC:BruLiaMit19}, code-based VRF) and Hypernova (\cite{EPRINT:KotSet23}, folding proof
+	of knowledge).
+	I love the folding trick!
+	Sadly, I never thought/discovered/read about it until recently.
+}

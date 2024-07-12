@@ -1,0 +1,43 @@
+% To allow compilation of the file
+% !TeX root = ./../reply.tex
+
+\begin{tikzpicture}
+  \draw (0,0) node [scale=1.0]{
+    \begin{tikzpicture}
+      [
+        txt/.style={sloped,font=\scriptsize,pos=.5},
+        txtv/.style={font=\scriptsize},
+        construction/.style={color=green,thick},
+        notion/.style={color=blue,thick},
+        impossible/.style={color=red, thick},
+        trivial/.style={color=black,thick,double},
+        conjecture/.style={color=orange,thick,decorate,decoration={snake,amplitude=1}},
+        related/.style={dashed,thick}
+      ]
+
+      \def\x{2};     % xshift constant
+      \def\y{1};     % yshift constant
+
+      \draw (0,\y*1+0.25) node (fg) {\TZrect{blue!10}{\x}{\y}{Finite Field}};
+      \draw (0,\y*0) node (share) {\TZrect{blue!10}{\x}{\y}{Shares}};
+      \draw (0,\y*-1-0.25) node (point) {\TZrect{blue!10}{\x}{\y}{Point}};
+      
+      \draw (1.5*\x,\y) node (ss) {\TZrect{yellow!10}{\x}{1.5*\y}{Secret Sharing}};
+      \draw (1.5*\x,-\y) node (party) {\TZrect{yellow!10}{\x}{1.5*\y}{Party}};
+      
+      \draw (3*\x,\y*0) node (ideal) {\TZrect{green!10}{\x}{2.5*\y}{Ideal $\Fabb$}};
+      
+      \draw (4.5*\x,\y*0) node (exp) {\TZrect{green!10}{\x}{2.5*\y}{$\pexp(b,\shares{a})$}};
+      
+      \draw[-Stealth,trivial] (fg) to (ss);
+      \draw[-Stealth,trivial] (share) to (party);
+      \draw[-Stealth,trivial] (point) to (party);
+      
+      \draw[-Stealth,trivial] (ss) to (ideal);
+      \draw[-Stealth,trivial] (party) to (ideal);
+      
+      \draw[Stealth-Stealth,trivial] (ideal) to (exp);
+      
+    \end{tikzpicture}
+  };
+\end{tikzpicture}
